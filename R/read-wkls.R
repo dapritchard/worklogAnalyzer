@@ -1,7 +1,12 @@
-parse_wkls <- function(wkls_df) {
-  stopifnot(is.data.frame(wkls_df))
-}
+# parse_wkls <- function(wkls_df) {
+#   stopifnot(is.data.frame(wkls_df))
+# }
 
+# TODO: check inputs
+# TODO: check conflicts in `...` (e.g. `file`, `colClasses`)
+# TODO: `row.names` is in output object, should this be dropped?
+# TODO: optional `timezone`?
+# TODO: add duration
 read_wkls <- function(file, col_labels, col_formats, ...) {
   stopifnot(
     is.character(file),
@@ -14,15 +19,34 @@ read_wkls <- function(file, col_labels, col_formats, ...) {
     colClasses = "character",
     nrows      = 1L
   )
-  wkls <- read.csv(
+  colClasses <- structure(
+    .Data = rep("NULL", ncol(header_row)),
+    names = c(t(header_row))
+  )
+  colClasses[col_labels] <- "character"
+  wkls_orig <- read.csv(
     file       = file,
     colClasses = colClasses,
     ...        = ...
   )
-  # dplyr::mutate(
-  #   .data = wkls,
-  #   start = strptime(x = start, format = "%Y-%m-%d %H:%M", tz = "US/Eastern"),
-  #   end   = strptime(x = end, format = "%Y-%m-%d %H:%M", tz = "US/Eastern"),
-  #   tags  = strsplit(tags, ":")
-  # )
+  wkls <- as_tibble(wkls_orig)
+  if ("start" %in% names(col_formats)) {
+    wkls[["start"]] <- strptime(
+      x      = wkls[["start"]],
+      format = col_formats['start'],
+      tz     = col_formats['timezone']
+    )
+  }
+  if ("end" %in% names(col_formats)) {
+    wkls[["end"]] <- strptime(
+      x      = wkls[["end"]],
+      format = col_formats['end'],
+      tz     = col_formats['timezone']
+    )
+  }
+  structure(
+    .Data      = wkls,
+    class      = c("worklogs", class(wkls)),
+    col_labels = col_labels
+  )
 }
