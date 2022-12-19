@@ -1,7 +1,3 @@
-# parse_wkls <- function(wkls_df) {
-#   stopifnot(is.data.frame(wkls_df))
-# }
-
 # TODO: check inputs
 # TODO: check conflicts in `...` (e.g. `file`, `colClasses`)
 # TODO: `row.names` is in output object, should this be dropped?
