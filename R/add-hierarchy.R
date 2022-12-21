@@ -61,10 +61,13 @@ add_hierarchy_leaf_list <- function(worklogs_leaf, hierarchy) {
 
 hierarchy_from_elements <- function(worklogs_df) {
   split_children <- function(worklogs_df) {
-    parent <- map_chr(worklogs_df$parents, chuck, 1L)
-    worklogs_df$parents <- map(worklogs_df$parents, tail, n = -1L)
+    parent <- map_chr(worklogs_df$parents, `[[`, 1L)
+    worklogs_df$parents <- map(worklogs_df$parents, `[`, -1L)
     children <- split(worklogs_df, parent)
-    map(children, hierarchy_from_elements)
+    structure(
+      .Data = map(children, hierarchy_from_elements),
+      class = "worklogs_node"
+    )
   }
   stopifnot(
     is.data.frame(worklogs_df),
@@ -73,19 +76,9 @@ hierarchy_from_elements <- function(worklogs_df) {
     map_lgl(worklogs_df$parents, is.character)
   )
   has_parents <- map_int(worklogs_df$parents, length) >= 1L
-  if (all(has_parents)) {
-    wkls <- split_children(worklogs_df)
-  }
-  else if (all(! has_parents)) {
-    wkls <- mk_worklogs_leafs(worklogs_df)
-  }
-  else {
-    parents_status <- if_else(has_parents, "yes_parents", "no_parents")
-    worklogs_df_split <- split(worklogs_df, parents_status)
-    wkls <- c(
-      split_children(worklogs_df_split$yes_parents),
-      mk_worklogs_leafs(worklogs_df_split$no_parents)
-    )
-  }
-  wkls
+  wkls <- c(
+    split_children(worklogs_df[has_parents, ]),
+    mk_worklogs_leafs(worklogs_df[! has_parents, ])
+  )
+  structure(wkls, class = "worklogs_node")
 }
