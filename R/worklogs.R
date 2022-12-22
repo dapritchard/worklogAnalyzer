@@ -1,3 +1,37 @@
+setClass(
+  Class     = "worklogs_leaf",
+  slots     = c(worklogs = "data.frame"),
+  prototype = list(data.frame())
+)
+
+setClass(
+  Class     = "worklogs_node",
+  slots     = c(children = "list"),
+  prototype = list(data.frame())
+)
+
+check_all_worklogs <- function(object) {
+  # msgs <- c(
+  #   chilren_not_list = "@children is required to be a list",
+  #   children_not_named = "@children is required to be a named list"
+  # )
+  children_names <- names(object@children)
+  if (! is.list(object@chilren)) {
+    return("@children is required to be a list")
+  }
+  else if (is.null(children_names)) {
+    return("@children is required to be a named list")
+  }
+  else if (length(unique(children_names)) != length(children_names)) {
+    return("@children names must be unique")
+  }
+  else if (! all(map_lgl(object@children, is, "worklogs"))) {
+    return("@children must all be worklogs")
+  }
+}
+
+setValidity("worklogs_node", check_all_worklogs)
+
 worklogs <- function(x) {
   stopifnot(is.list(x))
   if (is_worklogs(x)) {
