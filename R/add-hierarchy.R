@@ -61,7 +61,7 @@ add_hierarchy_leaf_list <- function(worklogs_leaf, hierarchy) {
 
 hierarchy_from_elements <- function(worklogs_df) {
   split_children <- function(worklogs_df) {
-    parent <- map_chr(worklogs_df$parents, `[[`, 1L)
+    parent <- map_chr(worklogs_df$parents, `[`, 1L)
     worklogs_df$parents <- map(worklogs_df$parents, `[`, -1L)
     children <- split(worklogs_df, parent)
     structure(
