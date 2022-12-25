@@ -1,25 +1,18 @@
-setClass(
-  Class     = "worklogs_leaf",
+setClass("worklogs_node",
+  slots     = c(children = "list"),
+  prototype = list(structure(list(), names = character(0L)))
+)
+
+setClass("worklogs_leaf",
   slots     = c(worklogs = "data.frame"),
   prototype = list(data.frame())
 )
 
-setClass(
-  Class     = "worklogs_node",
-  slots     = c(children = "list"),
-  prototype = list(data.frame())
-)
+setClassUnion("worklogs", c("worklogs_node", "worklogs_leaf"))
 
-check_all_worklogs <- function(object) {
-  # msgs <- c(
-  #   chilren_not_list = "@children is required to be a list",
-  #   children_not_named = "@children is required to be a named list"
-  # )
+validity_worklogs_node <- function(object) {
   children_names <- names(object@children)
-  if (! is.list(object@chilren)) {
-    return("@children is required to be a list")
-  }
-  else if (is.null(children_names)) {
+  if (is.null(children_names)) {
     return("@children is required to be a named list")
   }
   else if (length(unique(children_names)) != length(children_names)) {
@@ -28,53 +21,76 @@ check_all_worklogs <- function(object) {
   else if (! all(map_lgl(object@children, is, "worklogs"))) {
     return("@children must all be worklogs")
   }
-}
-
-setValidity("worklogs_node", check_all_worklogs)
-
-worklogs <- function(x) {
-  stopifnot(is.list(x))
-  if (is_worklogs(x)) {
-    return(x)
-  }
-  else if (is.data.frame(x)) {
-    return(mk_worklogs_leafs(x))
-  }
   else {
-    return(mk_worklogs_node(x))
+    return(TRUE)
   }
 }
 
-mk_worklogs_node <- function(worklogs_node) {
-  assert_raw_worklogs_node(worklogs_node)
-  structure(
-    .Data = map(worklogs_node, worklogs),
-    class = "worklogs_node"
-  )
+setValidity("worklogs_node", validity_worklogs_node)
+
+setGeneric("worklogs",
+  def       = function(wkls, split_dfs) standardGeneric("worklogs"),
+  signature = "wkls"
+)
+
+mk_worklogs_node <- function(wkls, split_dfs) {
+  stopifnot(is.list(wkls), is_bool(split_dfs))
+  raw_worklogs_node <- map(x, worklogs)
+  new("worklogs_node", children = raw_worklogs_node)
 }
 
-mk_worklogs_leafs <- function(worklogs_leaf) {
+setMethod("worklogs",
+  signature  = "list",
+  definition = mk_worklogs_node
+)
+
+mk_worklogs_leafs <- function(wkls, split_dfs) {
   add_class_info <- function(raw_leaf) {
     structure(
       .Data = raw_leaf,
-      class = c("worklogs_leaf", class(worklogs_leaf))
+      class = c("wkls", class(wkls))
     )
   }
-  stopifnot(is.data.frame(worklogs_leaf))
-  worklogs_leaf_tibble <- as_tibble(worklogs_leaf)
-  raw_leafs <- split(worklogs_leaf_tibble, worklogs_leaf_tibble$task)
-  structure(
-    .Data = map(raw_leafs, add_class_info),
-    class = "worklogs_node"
-  )
+  stopifnot(is.data.frame(wkls))
+  raw_tibble <- as_tibble(wkls)
+  raw_leafs <- split(raw_tibble, raw_tibble$task)
+  worklogs_leafs_list <- map(raw_leafs, ~ new("worklogs_leaf", worklogs = .x))
+  new("worklogs_node", children = worklogs_leafs_list)
 }
 
-assert_raw_worklogs_node <- function(x) {
-  stopifnot(
-    is.list(x),
-    ! is.null(names(x))
-  )
-}
+setMethod("worklogs",
+  signature  = "data.frame",
+  definition = mk_worklogs_leafs
+)
+
+
+# cloj <- select(out$personal$`programming exercises`$`exercism: Clojure`, -parents)
+# class(cloj) <- class(cloj)[-1L]
+# sml <- select(out$personal$`programming exercises`$`exercism: Standard ML`, -parents)
+# class(sml) <- class(sml)[-1L]
+# z <- list(cloj = cloj, sml = sml)
+
+# worklogs <- function(x) {
+#   stopifnot(is.list(x))
+#   if (is_worklogs(x)) {
+#     return(x)
+#   }
+#   else if (is.data.frame(x)) {
+#     return(mk_worklogs_leafs(x))
+#   }
+#   else {
+#     return(mk_worklogs_node(x))
+#   }
+# }
+
+
+
+# assert_raw_worklogs_node <- function(x) {
+#   stopifnot(
+#     is.list(x),
+#     ! is.null(names(x))
+#   )
+# }
 
 assert_raw_worklogs_leaf <- function(x) {
   stopifnot(
