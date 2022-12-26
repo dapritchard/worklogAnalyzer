@@ -35,7 +35,7 @@ setGeneric("worklogs",
 
 mk_worklogs_node <- function(wkls, split_dfs) {
   stopifnot(is.list(wkls), is_bool(split_dfs))
-  raw_worklogs_node <- map(x, worklogs)
+  raw_worklogs_node <- map(wkls, worklogs, split_dfs = split_dfs)
   new("worklogs_node", children = raw_worklogs_node)
 }
 
@@ -45,12 +45,14 @@ setMethod("worklogs",
 )
 
 mk_worklogs_leafs <- function(wkls, split_dfs) {
-  add_class_info <- function(raw_leaf) {
-    structure(
-      .Data = raw_leaf,
-      class = c("wkls", class(wkls))
-    )
-  }
+  `if`(
+    split_dfs,
+    mk_worklogs_leafs_split_yes(wkls),
+    mk_worklogs_leafs_split_no(wkls)
+  )
+}
+
+mk_worklogs_leafs_split_yes <- function(wkls) {
   stopifnot(is.data.frame(wkls))
   raw_tibble <- as_tibble(wkls)
   raw_leafs <- split(raw_tibble, raw_tibble$task)
@@ -58,62 +60,16 @@ mk_worklogs_leafs <- function(wkls, split_dfs) {
   new("worklogs_node", children = worklogs_leafs_list)
 }
 
+mk_worklogs_leafs_split_no <- function(wkls) {
+  stopifnot(
+    is.data.frame(wkls),
+    length(unique(wkls$task)) <= 1L
+  )
+  raw_leaf <- as_tibble(wkls)
+  worklogs_leaf <- new("worklogs_leaf", worklogs = raw_leaf)
+}
+
 setMethod("worklogs",
   signature  = "data.frame",
   definition = mk_worklogs_leafs
 )
-
-
-# cloj <- select(out$personal$`programming exercises`$`exercism: Clojure`, -parents)
-# class(cloj) <- class(cloj)[-1L]
-# sml <- select(out$personal$`programming exercises`$`exercism: Standard ML`, -parents)
-# class(sml) <- class(sml)[-1L]
-# z <- list(cloj = cloj, sml = sml)
-
-# worklogs <- function(x) {
-#   stopifnot(is.list(x))
-#   if (is_worklogs(x)) {
-#     return(x)
-#   }
-#   else if (is.data.frame(x)) {
-#     return(mk_worklogs_leafs(x))
-#   }
-#   else {
-#     return(mk_worklogs_node(x))
-#   }
-# }
-
-
-
-# assert_raw_worklogs_node <- function(x) {
-#   stopifnot(
-#     is.list(x),
-#     ! is.null(names(x))
-#   )
-# }
-
-assert_raw_worklogs_leaf <- function(x) {
-  stopifnot(
-    is.data.frame(x)
-  )
-}
-
-assert_string <- function(x) {
-  stopifnot(
-    is.character(x),
-    length(x) == 1L,
-    ! is.na(x)
-  )
-}
-
-is_worklogs <- function(x) {
-  is_worklogs_node(x) || is_worklogs_leaf(x)
-}
-
-is_worklogs_node <- function(x) {
-  inherits(x, "worklogs_node")
-}
-
-is_worklogs_leaf <- function(x) {
-  inherits(x, "worklogs_leaf")
-}
