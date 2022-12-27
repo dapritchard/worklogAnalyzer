@@ -82,3 +82,24 @@ hierarchy_from_elements <- function(worklogs_df) {
   )
   structure(wkls, class = "worklogs_node")
 }
+
+worklogs_from_parents <- function(worklogs_df) {
+  split_children <- function(worklogs_df) {
+    parent <- map_chr(worklogs_df$parents, `[`, 1L)
+    worklogs_df$parents <- map(worklogs_df$parents, `[`, -1L)
+    raw_children <- split(worklogs_df, parent)
+    map(raw_children, worklogs_from_parents)
+  }
+  stopifnot(
+    is.data.frame(worklogs_df), "parents" %in% names(worklogs_df),
+    is.list(worklogs_df$parents),
+    map_lgl(worklogs_df$parents, is.character)
+  )
+  has_parents <- map_int(worklogs_df$parents, length) >= 1L
+  worklogs_leafs <- mk_worklogs_leafs(worklogs_df[! has_parents, ], TRUE)
+  children <- c(
+    split_children(worklogs_df[has_parents, ]),
+    worklogs_leafs@children
+  )
+  new("worklogs_node", children = children)
+}
