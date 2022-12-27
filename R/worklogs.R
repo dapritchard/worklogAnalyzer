@@ -73,3 +73,63 @@ setMethod("worklogs",
   signature  = "data.frame",
   definition = mk_worklogs_leafs
 )
+
+
+
+print_worklogs <- function(object) {
+  wkls_str <- format_worklogs(object, "")
+  cat(".\n")
+  cat(wkls_str, sep = "\n")
+}
+
+setGeneric("format_worklogs",
+  def       = function(wkls, padding) standardGeneric("format_worklogs"),
+  signature = "wkls"
+)
+
+format_worklogs_node <- function(wkls, padding) {
+  # browser()
+  mk_top_levels <- function(children, padding) {
+    n <- length(children)
+    glyphs <- `if`(
+      n == 0L,
+      character(0L),
+      c(rep("├── ", n - 1L), "└── ")
+    )
+    sprintf("%s%s%s", padding, glyphs, names(children))
+  }
+  mk_next_padding <- function(children, padding) {
+    n <- length(children)
+    new_padding <- `if`(
+      n == 0L,
+      character(0L),
+      c(rep("│  ", n - 1L), "   ")
+    )
+    sprintf("%s%s", padding, new_padding)
+  }
+  wkls_children <- wkls@children
+  top_levels <- mk_top_levels(wkls_children, padding)
+  next_padding <- mk_next_padding(wkls_children, padding)
+  formatted_children <- map2(wkls_children, next_padding, format_worklogs)
+  combined_sections <- map2(top_levels, formatted_children, c)
+  flatten_chr(combined_sections)
+}
+
+setMethod("format_worklogs",
+  signature  = "worklogs_node",
+  definition = format_worklogs_node
+)
+
+format_worklogs_leaf <- function(wkls, padding) {
+  character(0L)
+}
+
+setMethod("format_worklogs",
+  signature  = "worklogs_leaf",
+  definition = format_worklogs_leaf
+)
+
+setMethod("show",
+  signature  = "worklogs",
+  definition = print_worklogs
+)
