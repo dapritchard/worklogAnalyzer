@@ -101,5 +101,5 @@ worklogs_from_parents <- function(worklogs_df) {
     split_children(worklogs_df[has_parents, ]),
     worklogs_leafs@children
   )
-  new("worklogs_node", children = children)
+  new("worklogs_node", children = children, fold_status = "unfolded")
 }

@@ -1,6 +1,9 @@
 setClass("worklogs_node",
-  slots     = c(children = "list"),
-  prototype = list(structure(list(), names = character(0L)))
+  slots     = c(children = "list", fold_status = "character"),
+  prototype = list(
+    children    = structure(list(), names = character(0L)),
+    fold_status = NA_character_
+  )
 )
 
 setClass("worklogs_leaf",
@@ -20,6 +23,9 @@ validity_worklogs_node <- function(object) {
   }
   else if (! all(map_lgl(object@children, is, "worklogs"))) {
     return("@children must all be worklogs")
+  }
+  else if (! (object@fold_status %in% c("folded", "unfolded"))) {
+    return("@fold_status of %s is invalid", object@fold_status)
   }
   else {
     return(TRUE)
@@ -57,7 +63,7 @@ mk_worklogs_leafs_split_yes <- function(wkls) {
   raw_tibble <- as_tibble(wkls)
   raw_leafs <- split(raw_tibble, raw_tibble$task)
   worklogs_leafs_list <- map(raw_leafs, ~ new("worklogs_leaf", worklogs = .x))
-  new("worklogs_node", children = worklogs_leafs_list)
+  new("worklogs_node", children = worklogs_leafs_list, fold_status = "unfolded")
 }
 
 mk_worklogs_leafs_split_no <- function(wkls) {
