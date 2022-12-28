@@ -42,7 +42,7 @@ setGeneric("worklogs",
 mk_worklogs_node <- function(wkls, split_dfs) {
   stopifnot(is.list(wkls), is_bool(split_dfs))
   raw_worklogs_node <- map(wkls, worklogs, split_dfs = split_dfs)
-  new("worklogs_node", children = raw_worklogs_node)
+  new("worklogs_node", children = raw_worklogs_node, fold_status = "unfolded")
 }
 
 setMethod("worklogs",
@@ -80,7 +80,28 @@ setMethod("worklogs",
   definition = mk_worklogs_leafs
 )
 
+setGeneric("count_descendents",
+  def = function(wkls) standardGeneric("count_descendents")
+)
 
+count_descendents_node <- function(wkls) {
+  children <- wkls@children
+  sum(map_int(children, count_descendents))
+}
+
+setMethod("count_descendents",
+  signature  = "worklogs_node",
+  definition = count_descendents_node
+)
+
+count_descendents_leaf <- function(wkls) {
+  1L
+}
+
+setMethod("count_descendents",
+  signature  = "worklogs_leaf",
+  definition = count_descendents_leaf
+)
 
 print_worklogs <- function(object) {
   wkls_str <- format_worklogs(object, "")
@@ -88,21 +109,51 @@ print_worklogs <- function(object) {
   cat(wkls_str, sep = "\n")
 }
 
+setGeneric("fold_status",
+  def       = function(wkls) standardGeneric("fold_status"),
+  signature = "wkls"
+)
+
+setMethod("fold_status",
+  signature  = "worklogs_node",
+  definition = function(wkls) wkls@fold_status
+)
+
+setMethod("fold_status",
+  signature  = "worklogs_leaf",
+  definition = function(wkls) "unfolded"
+)
+
 setGeneric("format_worklogs",
   def       = function(wkls, padding) standardGeneric("format_worklogs"),
   signature = "wkls"
 )
 
 format_worklogs_node <- function(wkls, padding) {
-  # browser()
+  `if`(
+    fold_status(wkls) == "unfolded",
+    format_worklogs_node_unfolded(wkls, padding),
+    format_worklogs_node_folded(wkls, padding)
+  )
+}
+
+format_worklogs_node_unfolded <- function(wkls, padding) {
   mk_top_levels <- function(children, padding) {
+    mk_folded_info <- function(wkls) {
+      `if`(
+        fold_status(wkls) == "folded",
+        sprintf("(+%d) ", count_descendents(wkls)),
+        ""
+      )
+    }
     n <- length(children)
     glyphs <- `if`(
       n == 0L,
       character(0L),
       c(rep("├── ", n - 1L), "└── ")
     )
-    sprintf("%s%s%s", padding, glyphs, names(children))
+    folded_info <- map_chr(children, mk_folded_info)
+    sprintf("%s%s%s%s", padding, glyphs, folded_info, names(children))
   }
   mk_next_padding <- function(children, padding) {
     n <- length(children)
@@ -119,6 +170,10 @@ format_worklogs_node <- function(wkls, padding) {
   formatted_children <- map2(wkls_children, next_padding, format_worklogs)
   combined_sections <- map2(top_levels, formatted_children, c)
   flatten_chr(combined_sections)
+}
+
+format_worklogs_node_folded <- function(wkls, padding) {
+  character(0L)
 }
 
 setMethod("format_worklogs",
