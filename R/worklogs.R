@@ -406,16 +406,52 @@ setMethod("extract_worklogs",
   definition = function(wkls, path) extract_worklogs_impl(wkls, path, "")
 )
 
+# setGeneric("collect_worklogs",
+#   def       = function(wkls) standardGeneric("collect_worklogs"),
+#   signature = "wkls"
+# )
+
+# # NOTE: the "flattening" seems to be pretty expensive, can this be improved?
+# collect_worklogs_node <- function(wkls) {
+#   stopifnot(is(wkls, "worklogs_node"))
+#   collected_worklogs <- map(wkls@children, collect_worklogs)
+#   list_flatten(collected_worklogs)
+# }
+
+# setMethod("collect_worklogs",
+#   signature  = "worklogs_node",
+#   definition = collect_worklogs_node
+# )
+
+# collect_worklogs_leaf <- function(wkls) {
+#   stopifnot(is(wkls, "worklogs_leaf"))
+#   wkls@worklogs
+# }
+
+# setMethod("collect_worklogs",
+#   signature  = "worklogs_leaf",
+#   definition = collect_worklogs_leaf
+# )
+
 setGeneric("collect_worklogs",
-  def       = function(wkls) standardGeneric("collect_worklogs"),
+  def       = function(wkls, parent_task) standardGeneric("collect_worklogs"),
   signature = "wkls"
 )
 
-# NOTE: the "flattening" seems to be pretty expensive, can this be improved?
-collect_worklogs_node <- function(wkls) {
+collect_worklogs_node <- function(wkls, parent_task) {
+  update_task_name <- function(wkls_df) {
+    stopifnot("task" %in% names(wkls_df))
+    wkls_df$task <- parent_task
+    wkls_df
+  }
   stopifnot(is(wkls, "worklogs_node"))
-  collected_worklogs <- map(wkls@children, collect_worklogs)
-  list_flatten(collected_worklogs)
+  collected_children_dfs_list <- imap(wkls@children, collect_worklogs)
+  collected_children_dfs <- list_flatten(collected_children_dfs_list)
+  `if`(
+    fold_status(wkls) == "folded",
+    map(collected_children_dfs, update_task_name),
+    collected_children_dfs
+  )
 }
 
 setMethod("collect_worklogs",
@@ -423,7 +459,24 @@ setMethod("collect_worklogs",
   definition = collect_worklogs_node
 )
 
-collect_worklogs_leaf <- function(wkls) {
+collect_worklogs_leaf <- function(wkls, parent_task) {
   stopifnot(is(wkls, "worklogs_leaf"))
   wkls@worklogs
 }
+
+setMethod("collect_worklogs",
+  signature  = "worklogs_leaf",
+  definition = collect_worklogs_leaf
+)
+
+as_tibble.worklogs_node <- function(x, ...) {
+  collected_worklogs_list <- collect_worklogs_node(x, "<top level>")
+  collected_worklogs <- bind_rows(collected_worklogs_list)
+  as_tibble(collected_worklogs, ...)
+}
+
+as_tibble.worklogs_leaf <- function(x, ...) {
+  as_tibble(x@worklogs, ...)
+}
+
+# setMethod("as_tibble", "worklogs_node", as_tibble.worklogs_node)
