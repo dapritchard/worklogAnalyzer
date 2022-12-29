@@ -194,3 +194,149 @@ setMethod("show",
   signature  = "worklogs",
   definition = print_worklogs
 )
+
+setGeneric("update_child",
+  def       = function(wkls, path, parents, f) standardGeneric("update_child"),
+  signature = "wkls"
+)
+
+update_child_node <- function(wkls, path, parents, f) {
+
+  # Update the appropriate child of `wkls`
+  update_child <- function() {
+
+    # Extract children
+    children <- wkls@children
+
+    # Update `path` and `parents` information for upcoming call
+    stopifnot(length(path) >= 1L)
+    child_name <- path[1L]
+    new_path <- path[-1L]
+    new_parents <- c(parents, child_name)
+
+    # Update the appropriate child
+    child <- chuck(children, child_name)
+    new_child <- update_child_node(child, new_path, new_parents, f)
+    stopifnot(is(new_child, "worklogs"))
+    validObject(new_child)
+
+    # Update the `children` slot and return `wkls`
+    pluck(children, child_name) <- new_child
+    wkls@children <- children
+    validObject(wkls)
+    wkls
+  }
+
+  `if`(
+    length(path) == 0L,
+    f(wkls),
+    update_child()
+  )
+}
+
+setMethod("update_child",
+  signature  = "worklogs_node",
+  definition = update_child_node
+)
+
+update_child_leaf <- function(wkls, path, parents, f) {
+  if (length(path) >= 1L) {
+    msg <- sprintf(
+      "%s\n%s%s\n%s",
+      "Can't get the child of a leaf node with the following parents:",
+      sprintf("    %s\n", path),
+      "The following children were asked for: ",
+      sprintf("    %s\n", path)
+    )
+    stop(msg)
+  }
+  f(wkls)
+}
+
+setMethod("update_child",
+  signature  = "worklogs_leaf",
+  definition = update_child_leaf
+)
+
+setGeneric("fold_this",
+  def       = function(wkls) standardGeneric("fold_this"),
+  signature = "wkls"
+)
+
+fold_this_node <- function(wkls) {
+  stopifnot(is(wkls, "worklogs_node"))
+  wkls@fold_status <- "folded"
+  validObject(wkls)
+  wkls
+}
+
+setMethod("fold_this",
+  signature  = "worklogs_node",
+  definition = fold_this_node
+)
+
+fold_this_leaf <- function(wkls) {
+  stopifnot(is(wkls, "worklogs_leaf"))
+  wkls
+}
+
+setMethod("fold_this",
+  signature  = "worklogs_leaf",
+  definition = fold_this_leaf
+)
+
+setGeneric("fold",
+  def       = function(wkls, path) standardGeneric("fold"),
+  signature = "wkls"
+)
+
+fold_impl <- function(wkls, path) {
+  stopifnot(is(wkls, "worklogs"))
+  update_child(wkls, path, character(0L), fold_this)
+}
+
+setMethod("fold",
+  signature  = "worklogs",
+  definition = fold_impl
+)
+
+setGeneric("fold_these_children",
+  def       = function(wkls) standardGeneric("fold_these_children"),
+  signature = "wkls"
+)
+
+fold_these_children_node <- function(wkls) {
+  stopifnot(is(wkls, "worklogs_node"))
+  wkls@children <- map(wkls@children, fold_this)
+  validObject(wkls)
+  wkls
+}
+
+setMethod("fold_these_children",
+  signature  = "worklogs_node",
+  definition = fold_these_children_node
+)
+
+fold_these_children_leaf <- function(wkls) {
+  stopifnot(is(wkls, "worklogs_leaf"))
+  wkls
+}
+setMethod("fold_these_children",
+  signature  = "worklogs_leaf",
+  definition = fold_these_children_leaf
+)
+
+setGeneric("fold_children",
+  def       = function(wkls, path) standardGeneric("fold_children"),
+  signature = "wkls"
+)
+
+fold_children_impl <- function(wkls, path) {
+  stopifnot(is(wkls, "worklogs"))
+  update_child(wkls, path, character(0L), fold_these_children)
+}
+
+setMethod("fold_children",
+  signature  = "worklogs",
+  definition = fold_children_impl
+)
