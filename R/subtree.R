@@ -39,3 +39,15 @@ subtree_extract <- function(worklogs_node, path) {
     }
   }
 }
+
+subtree_remove <- function(worklogs_node, path) {
+  stopifnot(
+    is_worklogs_node(worklogs_node),
+    is_chr_nomiss(path)
+  )
+  if (length(path) == 0L) {
+    # FIXME: this is a special case because we have to go in and grab a data
+    # frame at a leaf and empty all of the rows in order to get the schema
+    stop("'subtree_remove' at the root is not yet implemented")
+  }
+}
