@@ -406,33 +406,6 @@ setMethod("extract_worklogs",
   definition = function(wkls, path) extract_worklogs_impl(wkls, path, "")
 )
 
-# setGeneric("collect_worklogs",
-#   def       = function(wkls) standardGeneric("collect_worklogs"),
-#   signature = "wkls"
-# )
-
-# # NOTE: the "flattening" seems to be pretty expensive, can this be improved?
-# collect_worklogs_node <- function(wkls) {
-#   stopifnot(is(wkls, "worklogs_node"))
-#   collected_worklogs <- map(wkls@children, collect_worklogs)
-#   list_flatten(collected_worklogs)
-# }
-
-# setMethod("collect_worklogs",
-#   signature  = "worklogs_node",
-#   definition = collect_worklogs_node
-# )
-
-# collect_worklogs_leaf <- function(wkls) {
-#   stopifnot(is(wkls, "worklogs_leaf"))
-#   wkls@worklogs
-# }
-
-# setMethod("collect_worklogs",
-#   signature  = "worklogs_leaf",
-#   definition = collect_worklogs_leaf
-# )
-
 setGeneric("collect_worklogs",
   def       = function(wkls, parent_task) standardGeneric("collect_worklogs"),
   signature = "wkls"
