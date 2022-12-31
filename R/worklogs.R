@@ -455,13 +455,20 @@ as_tibble.worklogs_leaf <- function(x, ...) {
 
 # effort -----------------------------------------------------------------------
 
+# TODO: create validObject for the various classes
+
 setGeneric("extract_effort",
   def       = function(wkls) standardGeneric("extract_effort"),
   signature = "wkls"
 )
 
 extract_effort_node <- function(wkls) {
-  sum(map_dbl(wkls@children, extract_effort))
+  stopifnot(is(wkls, "worklogs_node"))
+  children_effort <- map(wkls@children, extract_effort)
+  list(
+    sum_effort    = sum(map_dbl(children_effort, chuck, "sum_effort")),
+    n_descendents = sum(map_int(children_effort, chuck, "n_descendents"))
+  )
 }
 
 setMethod("extract_effort",
@@ -471,7 +478,10 @@ setMethod("extract_effort",
 
 extract_effort_leaf <- function(wkls) {
   stopifnot(is(wkls, "worklogs_leaf"))
-  sum(as.numeric(wkls@worklogs$duration))
+  list(
+    sum_effort    = sum(as.numeric(wkls@worklogs$duration)),
+    n_descendents = 1L
+  )
 }
 
 setMethod("extract_effort",
@@ -480,21 +490,50 @@ setMethod("extract_effort",
 )
 
 setClass("effort_node",
-  slots = c(children = "list", sum_effort = "numeric"),
+  slots = c(
+    children      = "list",
+    sum_effort    = "numeric",
+    n_descendents = "integer"
+  ),
   prototype = list(
-    children   = structure(list(), names = character(0L)),
-    sum_effort = NA_real_
+    children      = structure(list(), names = character(0L)),
+    sum_effort    = NA_real_,
+    n_descendents = NA_integer_
   )
 )
 
-# TODO: create validObject?
-
 setClass("effort_leaf",
-  slots     = c(sum_effort = "numeric"),
-  prototype = list(NA_real_)
+  slots     = c(sum_effort = "numeric", n_descendents = "integer"),
+  prototype = list(sum_effort = NA_real_, n_descendents = NA_integer_)
 )
 
 setClassUnion("effort", c("effort_node", "effort_leaf"))
+
+
+setMethod("fold_status",
+  signature  = "effort_node",
+  definition = function(wkls) wkls@fold_status
+)
+
+setMethod("fold_status",
+  signature  = "effort_leaf",
+  definition = function(wkls) wkls@fold_status
+)
+
+# setGeneric("effort_fold_status",
+#   def       = function(effort) standardGeneric("effort_fold_status"),
+#   signature = "effort"
+# )
+
+# setMethod("effort_fold_status",
+#   signature  = "effort_node",
+#   definition = function(effort) effort@fold_status
+# )
+
+# setMethod("effort_fold_status",
+#   signature  = "effort_leaf",
+#   definition = function(effort) "unfolded"
+# )
 
 setGeneric("effort_collection",
   def       = function(wkls) standardGeneric("effort_collection"),
@@ -505,17 +544,27 @@ effort_collection_node <- function(wkls) {
   mk_effort_collection_node <- function(wkls) {
     children_effort_collection <- map(wkls@children, effort_collection)
     sum_effort <- sum(map_dbl(children_effort_collection, `@`, "sum_effort"))
+    n_descendents <- sum(map_int(children_effort_collection, `@`, "n_descendents"))
     new(
-      Class      = "effort_node",
-      children   = children_effort_collection,
-      sum_effort = sum_effort
+      Class         = "effort_node",
+      children      = children_effort_collection,
+      sum_effort    = sum_effort,
+      n_descendents = n_descendents
+    )
+  }
+  mk_effort_collection_leaf <- function(wkls) {
+    total <- extract_effort(wkls)
+    new(
+      Class         = "effort_leaf",
+      sum_effort    = chuck(total, "sum_effort"),
+      n_descendents = chuck(total, "n_descendents")
     )
   }
   stopifnot(is(wkls, "worklogs_node"))
   `if`(
     fold_status(wkls) == "unfolded",
     mk_effort_collection_node(wkls),
-    new("effort_leaf", sum_effort = extract_effort(wkls))
+    mk_effort_collection_leaf(wkls)
   )
 }
 
@@ -526,7 +575,13 @@ setMethod("effort_collection",
 
 effort_collection_leaf <- function(wkls) {
   stopifnot(is(wkls, "worklogs_leaf"))
-  new("effort_leaf", sum_effort = extract_effort(wkls))
+  # TODO: same code as for `mk_effort_collection_leaf`
+  total <- extract_effort(wkls)
+  new(
+    Class         = "effort_leaf",
+    sum_effort    = chuck(total, "sum_effort"),
+    n_descendents = chuck(total, "n_descendents")
+  )
 }
 
 setMethod("effort_collection",
