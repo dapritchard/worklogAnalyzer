@@ -452,4 +452,84 @@ as_tibble.worklogs_leaf <- function(x, ...) {
   as_tibble(x@worklogs, ...)
 }
 
-# setMethod("as_tibble", "worklogs_node", as_tibble.worklogs_node)
+
+# effort -----------------------------------------------------------------------
+
+setGeneric("extract_effort",
+  def       = function(wkls) standardGeneric("extract_effort"),
+  signature = "wkls"
+)
+
+extract_effort_node <- function(wkls) {
+  sum(map_dbl(wkls@children, extract_effort))
+}
+
+setMethod("extract_effort",
+  signature  = "worklogs_node",
+  definition = extract_effort_node
+)
+
+extract_effort_leaf <- function(wkls) {
+  stopifnot(is(wkls, "worklogs_leaf"))
+  sum(as.numeric(wkls@worklogs$duration))
+}
+
+setMethod("extract_effort",
+  signature  = "worklogs_leaf",
+  definition = extract_effort_leaf
+)
+
+setClass("effort_node",
+  slots = c(children = "list", sum_effort = "numeric"),
+  prototype = list(
+    children   = structure(list(), names = character(0L)),
+    sum_effort = NA_real_
+  )
+)
+
+# TODO: create validObject?
+
+setClass("effort_leaf",
+  slots     = c(sum_effort = "numeric"),
+  prototype = list(NA_real_)
+)
+
+setClassUnion("effort", c("effort_node", "effort_leaf"))
+
+setGeneric("effort_collection",
+  def       = function(wkls) standardGeneric("effort_collection"),
+  signature = "wkls"
+)
+
+effort_collection_node <- function(wkls) {
+  mk_effort_collection_node <- function(wkls) {
+    children_effort_collection <- map(wkls@children, effort_collection)
+    sum_effort <- sum(map_dbl(children_effort_collection, `@`, "sum_effort"))
+    new(
+      Class      = "effort_node",
+      children   = children_effort_collection,
+      sum_effort = sum_effort
+    )
+  }
+  stopifnot(is(wkls, "worklogs_node"))
+  `if`(
+    fold_status(wkls) == "unfolded",
+    mk_effort_collection_node(wkls),
+    new("effort_leaf", sum_effort = extract_effort(wkls))
+  )
+}
+
+setMethod("effort_collection",
+  signature  = "worklogs_node",
+  definition = effort_collection_node
+)
+
+effort_collection_leaf <- function(wkls) {
+  stopifnot(is(wkls, "worklogs_leaf"))
+  new("effort_leaf", sum_effort = extract_effort(wkls))
+}
+
+setMethod("effort_collection",
+  signature  = "worklogs_leaf",
+  definition = effort_collection_leaf
+)
