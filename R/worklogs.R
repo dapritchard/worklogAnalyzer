@@ -503,8 +503,16 @@ setClass("effort_node",
 )
 
 setClass("effort_leaf",
-  slots     = c(sum_effort = "numeric", n_descendents = "integer"),
-  prototype = list(sum_effort = NA_real_, n_descendents = NA_integer_)
+  slots = c(
+    fold_status   = "character",
+    sum_effort    = "numeric",
+    n_descendents = "integer"
+  ),
+  prototype = list(
+    fold_status   = NA_character_,
+    sum_effort    = NA_real_,
+    n_descendents = NA_integer_
+  )
 )
 
 setClassUnion("effort", c("effort_node", "effort_leaf"))
@@ -512,7 +520,7 @@ setClassUnion("effort", c("effort_node", "effort_leaf"))
 
 setMethod("fold_status",
   signature  = "effort_node",
-  definition = function(wkls) wkls@fold_status
+  definition = function(wkls) "unfolded"
 )
 
 setMethod("fold_status",
@@ -556,6 +564,7 @@ effort_collection_node <- function(wkls) {
     total <- extract_effort(wkls)
     new(
       Class         = "effort_leaf",
+      fold_status   = "folded",
       sum_effort    = chuck(total, "sum_effort"),
       n_descendents = chuck(total, "n_descendents")
     )
@@ -579,6 +588,7 @@ effort_collection_leaf <- function(wkls) {
   total <- extract_effort(wkls)
   new(
     Class         = "effort_leaf",
+    fold_status   = "unfolded",
     sum_effort    = chuck(total, "sum_effort"),
     n_descendents = chuck(total, "n_descendents")
   )
@@ -588,3 +598,121 @@ setMethod("effort_collection",
   signature  = "worklogs_leaf",
   definition = effort_collection_leaf
 )
+
+setGeneric("format_effort",
+  def = function(effort, padding, depth, total_effort, config)
+    standardGeneric("format_effort"),
+  signature = "effort"
+)
+
+# format_effort_node <- function(effort, padding, depth, total_effort, config) {
+#   `if`(
+#     fold_status(effort) == "unfolded",
+#     format_effort_node(effort, padding, depth, total_effort, config),
+#     format_effort_node_folded(effort, padding, depth, total_effort, config)
+#   )
+# }
+
+format_effort_node <- function(effort, padding, depth, total_effort, config) {
+  mk_top_levels <- function(children, padding) {
+    mk_folded_info <- function(effort) {
+      `if`(
+        fold_status(effort) == "folded",
+        sprintf("(+%d) ", effort@n_descendents),
+        ""
+      )
+    }
+    mk_effort_percents <- function(children) {
+      sum_efforts <- map_dbl(children, `@`, "sum_effort")
+      proportion <- sum_efforts / total_effort
+      percent <- as.integer(round(100 * proportion))
+      spaces <- strrep(" ", 5L * depth)
+      # case_when(
+      #   sum_efforts == 0  ~ sprintf("%s  0%%", spaces),
+      #   proportion < 0.01 ~ sprintf("%s <1%%", spaces),
+      #   percent < 10L     ~ sprintf("%s  %d%%", spaces, percent),
+      #   proportion < 0.99 ~ sprintf("%s %d%%", spaces, percent),
+      #   TRUE              ~ sprintf("%s>99%%", spaces)
+      # )
+      case_when(
+        percent <= 9L ~ sprintf("%s %d%%", spaces, percent),
+        TRUE          ~ sprintf("%s%d%%", spaces, percent)
+      )
+    }
+    n <- length(children)
+    glyphs <- `if`(
+      n == 0L,
+      character(0L),
+      c(rep("├── ", n - 1L), "└── ")
+    )
+    folded_info <- map_chr(children, mk_folded_info)
+    # TODO: add padding to right-align `folded_info`
+    tasks <- sprintf("%s%s%s%s", padding, glyphs, folded_info, names(children))
+    efforts <- mk_effort_percents(children)
+    map2(tasks, efforts, ~ list(task = .x, effort = .y))
+  }
+  mk_next_padding <- function(children, padding) {
+    n <- length(children)
+    new_padding <- `if`(
+      n == 0L,
+      character(0L),
+      c(rep("│  ", n - 1L), "   ")
+    )
+    sprintf("%s%s", padding, new_padding)
+  }
+  wkls_children <- effort@children
+  top_levels <- mk_top_levels(wkls_children, padding)
+  next_padding <- mk_next_padding(wkls_children, padding)
+  formatted_children <- map2(
+    .x           = wkls_children,
+    .y           = next_padding,
+    .f           = format_effort,
+    depth        = depth + 1L,
+    total_effort = total_effort,
+    config       = config
+  )
+  combined_sections <- map2(top_levels, formatted_children, ~ c(list(.x), .y))
+  flatten(combined_sections)
+  # # map2(top_levels, formatted_children, c)
+  # combined_sections <- map2(top_levels, formatted_children, c)
+  # flatten_chr(combined_sections)
+}
+
+# format_effort_node_folded <- function(effort, padding, depth, total_effort, config) {
+#   character(0L)
+# }
+
+setMethod("format_effort",
+  signature  = "effort_node",
+  definition = format_effort_node
+)
+
+format_effort_leaf <- function(effort, padding, depth, total_effort, config) {
+  character(0L)
+}
+
+setMethod("format_effort",
+  signature  = "effort_leaf",
+  definition = format_effort_leaf
+)
+
+effort_summary <- function(wkls) {
+  effort <- effort_collection(wkls)
+  tree_components <- format_effort_node(effort, "", 0L, effort@sum_effort, NULL)
+  tasks <- map_chr(tree_components, chuck, "task")
+  efforts <- map_chr(tree_components, chuck, "effort")
+  task_widths <- nchar(tasks)
+  stopifnot(length(task_widths) >= 1L)
+  max_task_width = max(task_widths)
+  task_padding <- strrep(" ", max_task_width + 2L - task_widths)
+  effort_summary <- paste0(tasks, task_padding, efforts)
+  effort_column_header_components <- c("Effort proportion", "-----------------")
+  effort_column_header_padding <- strrep(" ", max(nchar(effort_summary)) - 18L)
+  effort_column_header <- paste0(
+    c(" ", "."),
+    effort_column_header_padding,
+    effort_column_header_components
+  )
+  cat(effort_column_header, sep = "\n")
+  cat(effort_summary, sep = "\n")
+}
