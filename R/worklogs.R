@@ -626,7 +626,7 @@ format_effort_node <- function(effort, padding, depth, total_effort, config) {
       sum_efforts <- map_dbl(children, `@`, "sum_effort")
       proportion <- sum_efforts / total_effort
       percent <- as.integer(round(100 * proportion))
-      spaces <- strrep(" ", 5L * depth)
+      # spaces <- strrep(" ", 6L * depth)
       # case_when(
       #   sum_efforts == 0  ~ sprintf("%s  0%%", spaces),
       #   proportion < 0.01 ~ sprintf("%s <1%%", spaces),
@@ -634,6 +634,7 @@ format_effort_node <- function(effort, padding, depth, total_effort, config) {
       #   proportion < 0.99 ~ sprintf("%s %d%%", spaces, percent),
       #   TRUE              ~ sprintf("%s>99%%", spaces)
       # )
+      spaces <- strrep(" ", 5L * depth)
       case_when(
         percent <= 9L ~ sprintf("%s %d%%", spaces, percent),
         TRUE          ~ sprintf("%s%d%%", spaces, percent)
@@ -645,7 +646,14 @@ format_effort_node <- function(effort, padding, depth, total_effort, config) {
       character(0L),
       c(rep("├── ", n - 1L), "└── ")
     )
-    folded_info <- map_chr(children, mk_folded_info)
+    folded_info_orig <- map_chr(children, mk_folded_info)
+    max_folded_info <- max(nchar(folded_info_orig))
+    padding_width <- max_folded_info - nchar(folded_info_orig)
+    folded_info_padding <- strrep(" ", padding_width)
+    folded_info <- case_when(
+      folded_info_orig == "" ~ "",
+      TRUE                   ~ paste0(folded_info_padding, folded_info_orig)
+    )
     # TODO: add padding to right-align `folded_info`
     tasks <- sprintf("%s%s%s%s", padding, glyphs, folded_info, names(children))
     efforts <- mk_effort_percents(children)
