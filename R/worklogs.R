@@ -654,7 +654,6 @@ format_effort_node <- function(effort, padding, depth, total_effort, config) {
       folded_info_orig == "" ~ "",
       TRUE                   ~ paste0(folded_info_padding, folded_info_orig)
     )
-    # TODO: add padding to right-align `folded_info`
     tasks <- sprintf("%s%s%s%s", padding, glyphs, folded_info, names(children))
     efforts <- mk_effort_percents(children)
     map2(tasks, efforts, ~ list(task = .x, effort = .y))
@@ -668,7 +667,11 @@ format_effort_node <- function(effort, padding, depth, total_effort, config) {
     )
     sprintf("%s%s", padding, new_padding)
   }
-  wkls_children <- effort@children
+  wkls_children <- `if`(
+    config$show_all,
+    effort@children,
+    keep(effort@children, ~ .x@sum_effort > 0)
+  )
   top_levels <- mk_top_levels(wkls_children, padding)
   next_padding <- mk_next_padding(wkls_children, padding)
   formatted_children <- map2(
@@ -704,9 +707,11 @@ setMethod("format_effort",
   definition = format_effort_leaf
 )
 
-effort_summary <- function(wkls) {
+effort_summary <- function(wkls, show_all = FALSE) {
+  config <- list(show_all = show_all)
   effort <- effort_collection(wkls)
-  tree_components <- format_effort_node(effort, "", 0L, effort@sum_effort, NULL)
+  stopifnot(effort@sum_effort > 0)
+  tree_components <- format_effort_node(effort, "", 0L, effort@sum_effort, config)
   tasks <- map_chr(tree_components, chuck, "task")
   efforts <- map_chr(tree_components, chuck, "effort")
   task_widths <- nchar(tasks)
@@ -724,6 +729,9 @@ effort_summary <- function(wkls) {
   cat(effort_column_header, sep = "\n")
   cat(effort_summary, sep = "\n")
 }
+
+
+# filter time routines ---------------------------------------------------------
 
 setGeneric("update_worklogs",
   def       = function(wkls, f) standardGeneric("update_worklogs"),
