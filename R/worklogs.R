@@ -724,3 +724,154 @@ effort_summary <- function(wkls) {
   cat(effort_column_header, sep = "\n")
   cat(effort_summary, sep = "\n")
 }
+
+setGeneric("update_worklogs",
+  def       = function(wkls, f) standardGeneric("update_worklogs"),
+  signature = "wkls"
+)
+
+update_worklogs_node <- function(wkls, f) {
+  stopifnot(is(wkls, "worklogs_node"))
+  wkls@children <- map(wkls@children, update_worklogs, f = f)
+  wkls
+}
+
+setMethod("update_worklogs",
+  signature  = "worklogs_node",
+  definition = update_worklogs_node
+)
+
+update_worklogs_leaf <- function(wkls, f) {
+  stopifnot(is(wkls, "worklogs_leaf"))
+  wkls@worklogs <- f(wkls@worklogs)
+  wkls
+}
+
+setMethod("update_worklogs",
+  signature  = "worklogs_leaf",
+  definition = update_worklogs_leaf
+)
+
+setGeneric("filter_time_before",
+  def       = function(wkls, datetime) standardGeneric("filter_time_before"),
+  signature = "wkls"
+)
+
+filter_time_before_impl <- function(wkls, datetime) {
+  filter_fcn <- function(wkls_df) {
+    wkls_df[wkls_df$start < datetime, ]
+  }
+  stopifnot(
+    is(wkls, "worklogs"),
+    inherits(datetime, "POSIXct")
+  )
+  update_worklogs(wkls, filter_fcn)
+}
+
+setMethod("filter_time_before",
+  signature  = "worklogs",
+  definition = filter_time_before_impl
+)
+
+setGeneric("filter_time_after",
+  def       = function(wkls, datetime) standardGeneric("filter_time_after"),
+  signature = "wkls"
+)
+
+filter_time_after_impl <- function(wkls, datetime) {
+  filter_fcn <- function(wkls_df) {
+    wkls_df[wkls_df$start >= datetime, ]
+  }
+  stopifnot(
+    is(wkls, "worklogs"),
+    inherits(datetime, "POSIXct")
+  )
+  update_worklogs(wkls, filter_fcn)
+}
+
+setMethod("filter_time_after",
+  signature  = "worklogs",
+  definition = filter_time_after_impl
+)
+
+setGeneric("filter_time_between",
+  def = function(wkls, before_datetime, after_datetime)
+    standardGeneric("filter_time_between"),
+  signature = "wkls"
+)
+
+filter_time_between_impl <- function(wkls, before_datetime, after_datetime) {
+  filter_fcn <- function(wkls_df) {
+    is_after_start <- before_datetime <= wkls_df$start
+    is_before_end <- wkls_df$start < after_datetime
+    wkls_df[is_after_start & is_before_end, ]
+  }
+  stopifnot(
+    is(wkls, "worklogs"),
+    inherits(before_datetime, "POSIXct"),
+    inherits(after_datetime, "POSIXct")
+  )
+  update_worklogs(wkls, filter_fcn)
+}
+
+setMethod("filter_time_between",
+  signature  = "worklogs",
+  definition = filter_time_between_impl
+)
+
+setGeneric("filter_this_week",
+  def       = function(wkls) standardGeneric("filter_this_week"),
+  signature = "wkls"
+)
+
+calc_this_week_start <- function(datetime) {
+  n_day <- wday(datetime)
+  datetime - days(n_day - 1)
+}
+
+# calc_this_week_end <- function(datetime) {
+#   n_day <- wday(datetime)
+#   datetime + days(8 - n_day)
+# }
+
+filter_this_week_impl <- function(wkls) {
+  filter_fcn <- function(wkls_df) {
+    wkls_df[wkls_df$start >= this_week_start, ]
+  }
+  stopifnot(is(wkls, "worklogs"))
+  this_week_start <- calc_this_week_start(today())
+  update_worklogs(wkls, filter_fcn)
+}
+
+setMethod("filter_this_week",
+  signature  = "worklogs",
+  definition = filter_this_week_impl
+)
+
+setGeneric("filter_last_week",
+  def       = function(wkls) standardGeneric("filter_last_week"),
+  signature = "wkls"
+)
+
+calc_last_week_start <- function(datetime) {
+  n_day <- wday(datetime)
+  datetime - days(n_day + 6)
+}
+
+filter_last_week_impl <- function(wkls) {
+  filter_fcn <- function(wkls_df) {
+    is_after_start <- last_week_start <= wkls_df$start
+    is_before_end <- wkls_df$start < this_week_start
+    wkls_df[is_after_start & is_before_end, ]
+  }
+  stopifnot(is(wkls, "worklogs"))
+  today_datetime <- today()
+  last_week_start <- calc_last_week_start(today_datetime)
+  this_week_start <- calc_this_week_start(today_datetime)
+  update_worklogs(wkls, filter_fcn)
+}
+
+setMethod("filter_last_week",
+  signature  = "worklogs",
+  definition = filter_last_week_impl
+)
