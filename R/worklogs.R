@@ -622,6 +622,23 @@ format_effort_node <- function(effort, padding, depth, total_effort, config) {
         ""
       )
     }
+    mk_effort_info <- function(children) {
+      sum_efforts <- map_dbl(children, `@`, "sum_effort")
+      sum_efforts_minutes <- as.integer(sum_efforts / 60)
+      hours <- sum_efforts_minutes %/% 60L
+      minutes <- sum_efforts_minutes %% 60L
+      effort_chr <- sprintf("%d:%d", hours, minutes)
+      proportion <- sum_efforts / total_effort
+      percent_int <- as.integer(round(100 * proportion))
+      percent_chr <- case_when(
+        percent <= 9L ~ sprintf("%s %d%%", spaces, percent),
+        TRUE          ~ sprintf("%s%d%%", spaces, percent)
+      )
+      tibble(
+        effort  = effort,
+        percent = percent
+      )
+    }
     mk_effort_percents <- function(children) {
       sum_efforts <- map_dbl(children, `@`, "sum_effort")
       proportion <- sum_efforts / total_effort
