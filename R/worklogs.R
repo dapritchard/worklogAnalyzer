@@ -600,7 +600,7 @@ setMethod("effort_collection",
 )
 
 setGeneric("format_effort",
-  def = function(effort, padding, depth, total_effort, config)
+  def = function(effort, padding, pad_effort, total_effort, config)
     standardGeneric("format_effort"),
   signature = "effort"
 )
@@ -613,7 +613,14 @@ setGeneric("format_effort",
 #   )
 # }
 
-format_effort_node <- function(effort, padding, depth, total_effort, config) {
+pad_left <- function(s) {
+  stopifnot(is.character(s))
+  n_chars <- nchar(s)
+  padding <- strrep(" ", max(n_chars) - n_chars)
+  paste0(padding, s)
+}
+
+format_effort_node <- function(effort, padding, pad_effort, total_effort, config) {
   mk_top_levels <- function(children, padding) {
     mk_folded_info <- function(effort) {
       `if`(
@@ -627,35 +634,30 @@ format_effort_node <- function(effort, padding, depth, total_effort, config) {
       sum_efforts_minutes <- as.integer(sum_efforts / 60)
       hours <- sum_efforts_minutes %/% 60L
       minutes <- sum_efforts_minutes %% 60L
-      effort_chr <- sprintf("%d:%d", hours, minutes)
+      effort_orig_chr <- sprintf("%d:%d", hours, minutes)
+      effort_chr <- pad_left(effort_orig_chr)
       proportion <- sum_efforts / total_effort
       percent_int <- as.integer(round(100 * proportion))
       percent_chr <- case_when(
-        percent <= 9L ~ sprintf("%s %d%%", spaces, percent),
-        TRUE          ~ sprintf("%s%d%%", spaces, percent)
+        percent <= 9L ~ sprintf("%s %d%%", pad_effort, percent),
+        TRUE          ~ sprintf("%s%d%%", pad_effort, percent)
       )
       tibble(
         effort  = effort,
         percent = percent
       )
     }
-    mk_effort_percents <- function(children) {
-      sum_efforts <- map_dbl(children, `@`, "sum_effort")
-      proportion <- sum_efforts / total_effort
-      percent <- as.integer(round(100 * proportion))
-      # spaces <- strrep(" ", 6L * depth)
-      # case_when(
-      #   sum_efforts == 0  ~ sprintf("%s  0%%", spaces),
-      #   proportion < 0.01 ~ sprintf("%s <1%%", spaces),
-      #   percent < 10L     ~ sprintf("%s  %d%%", spaces, percent),
-      #   proportion < 0.99 ~ sprintf("%s %d%%", spaces, percent),
-      #   TRUE              ~ sprintf("%s>99%%", spaces)
-      # )
-      spaces <- strrep(" ", 5L * depth)
-      case_when(
-        percent <= 9L ~ sprintf("%s %d%%", spaces, percent),
-        TRUE          ~ sprintf("%s%d%%", spaces, percent)
-      )
+    mk_efforts <- function(children) {
+      effort_info <- mk_effort_info(children)
+      if (config$effort_style == "effort_and_percent") {
+        return(paste(effort_info$effort, pad_left(sprintf("(%s)", effort_info$percent))))
+      }
+      else if (config$effort_style == "effort") {
+        return(effort_info$effort)
+      }
+      else if (config$effort_style == "percent") {
+        return(pad_left(effort_info$percent))
+      }
     }
     n <- length(children)
     glyphs <- `if`(
@@ -715,7 +717,7 @@ setMethod("format_effort",
   definition = format_effort_node
 )
 
-format_effort_leaf <- function(effort, padding, depth, total_effort, config) {
+format_effort_leaf <- function(effort, padding, pad_effort, total_effort, config) {
   character(0L)
 }
 
@@ -728,7 +730,7 @@ effort_summary <- function(wkls, show_all = FALSE) {
   config <- list(show_all = show_all)
   effort <- effort_collection(wkls)
   stopifnot(effort@sum_effort > 0)
-  tree_components <- format_effort_node(effort, "", 0L, effort@sum_effort, config)
+  tree_components <- format_effort_node(effort, "", "", effort@sum_effort, config)
   tasks <- map_chr(tree_components, chuck, "task")
   efforts <- map_chr(tree_components, chuck, "effort")
   task_widths <- nchar(tasks)
