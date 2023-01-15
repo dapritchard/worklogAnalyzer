@@ -600,7 +600,7 @@ setMethod("effort_collection",
 )
 
 setGeneric("format_effort",
-  def = function(effort, padding, pad_effort, total_effort, config)
+  def = function(effort, padding, depth, total_effort, config)
     standardGeneric("format_effort"),
   signature = "effort"
 )
@@ -630,7 +630,7 @@ pad_nonempty <- function(s) {
   paste0(padding, s)
 }
 
-format_effort_node <- function(effort, padding, pad_effort, total_effort, config) {
+format_effort_node <- function(effort, padding, depth, total_effort, config) {
   mk_top_levels <- function(children, padding) {
     mk_folded_info <- function(effort) {
       `if`(
@@ -663,26 +663,26 @@ format_effort_node <- function(effort, padding, pad_effort, total_effort, config
         percent = percent_chr
       )
     }
-    mk_efforts <- function(efforts_info) {
-      if (config$effort_style == "effort_and_percent") {
-        efforts <- paste0(
-          pad_effort,
-          pad_left(efforts_info$effort),
-          " ",
-          pad_left(sprintf("(%s)", efforts_info$percent))
-        )
-      }
-      else if (config$effort_style == "effort") {
-        efforts <- sprintf("%s%s", pad_effort, pad_left(efforts_info$effort))
-      }
-      else if (config$effort_style == "percent") {
-        efforts <- sprintf("%s%s", pad_effort, pad_left(efforts_info$percent))
-      }
-      else {
-        stop("Internal error: invalid value of config$effort_style: ", config$effort_style)
-      }
-      efforts
-    }
+    # mk_efforts <- function(efforts_info) {
+    #   if (config$effort_style == "effort_and_percent") {
+    #     efforts <- paste0(
+    #       pad_effort,
+    #       pad_left(efforts_info$effort),
+    #       " ",
+    #       pad_left(sprintf("(%s)", efforts_info$percent))
+    #     )
+    #   }
+    #   else if (config$effort_style == "effort") {
+    #     efforts <- sprintf("%s%s", pad_effort, pad_left(efforts_info$effort))
+    #   }
+    #   else if (config$effort_style == "percent") {
+    #     efforts <- sprintf("%s%s", pad_effort, pad_left(efforts_info$percent))
+    #   }
+    #   else {
+    #     stop("Internal error: invalid value of config$effort_style: ", config$effort_style)
+    #   }
+    #   efforts
+    # }
     n <- length(children)
     glyphs <- `if`(
       n == 0L,
@@ -692,8 +692,9 @@ format_effort_node <- function(effort, padding, pad_effort, total_effort, config
     folded_info <- pad_nonempty(map_chr(children, mk_folded_info))
     tasks <- sprintf("%s%s%s%s", padding, glyphs, folded_info, names(children))
     efforts_info <- mk_efforts_info(children)
-    efforts <- mk_efforts(efforts_info)
-    map2(tasks, efforts, ~ list(task = .x, effort = .y))
+    # efforts <- mk_efforts(efforts_info)
+    transpose(tibble(tasks = tasks, efforts_info, depth = depth))
+    # map2(tasks, transpose(efforts_info), ~ list(task = .x, effort = .y))
   }
   mk_next_padding <- function(children, padding) {
     n <- length(children)
@@ -704,14 +705,14 @@ format_effort_node <- function(effort, padding, pad_effort, total_effort, config
     )
     sprintf("%s%s", padding, new_padding)
   }
-  mk_next_pad_effort <- function(top_levels) {
-    next_pad_effort <- `if`(
-      length(top_levels) == 0L,
-      "",
-      strrep(" ", nchar(top_levels[[1L]]$effort))
-    )
-    sprintf("  %s", next_pad_effort)
-  }
+  # mk_next_pad_effort <- function(top_levels) {
+  #   next_pad_effort <- `if`(
+  #     length(top_levels) == 0L,
+  #     "",
+  #     strrep(" ", nchar(top_levels[[1L]]$effort))
+  #   )
+  #   sprintf("  %s", next_pad_effort)
+  # }
   wkls_children <- `if`(
     config$show_all,
     effort@children,
@@ -721,10 +722,13 @@ format_effort_node <- function(effort, padding, pad_effort, total_effort, config
   next_inputs <- list(
     effort     = wkls_children,
     padding    = mk_next_padding(wkls_children, padding),
-    pad_effort = mk_next_pad_effort(top_levels)
+    depth      = depth + 1L
+    # pad_effort = mk_next_pad_effort(top_levels)
   )
   formatted_children <- pmap(
     .l           = next_inputs,
+    # .x           = wkls_children,
+    # .y           = mk_next_padding(wkls_children, padding),
     .f           = format_effort,
     total_effort = total_effort,
     config       = config
@@ -742,7 +746,7 @@ setMethod("format_effort",
   definition = format_effort_node
 )
 
-format_effort_leaf <- function(effort, padding, pad_effort, total_effort, config) {
+format_effort_leaf <- function(effort, padding, depth, total_effort, config) {
   character(0L)
 }
 
