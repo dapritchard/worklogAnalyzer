@@ -613,6 +613,39 @@ setGeneric("format_effort",
 #   )
 # }
 
+pad_left <- function(s) {
+  stopifnot(is.character(s))
+  if (length(s) == 0L) {
+    return(s)
+  }
+  n_chars <- nchar(s)
+  padding <- strrep(" ", max(n_chars) - n_chars)
+  paste0(padding, s)
+}
+
+pad_right <- function(s) {
+  stopifnot(is.character(s))
+  if (length(s) == 0L) {
+    return(s)
+  }
+  n_chars <- nchar(s)
+  padding <- strrep(" ", max(n_chars) - n_chars)
+  paste0(s, padding)
+}
+
+pad_entries_only <- function(s) {
+  stopifnot(is.character(s))
+  if (length(s) == 0L) {
+    return(s)
+  }
+  n_chars <- nchar(s)
+  padding <- case_when(
+    s == "" ~ "",
+    TRUE    ~ strrep(" ", max(n_chars) - n_chars)
+  )
+  paste0(padding, s)
+}
+
 format_effort_node <- function(effort, padding, depth, total_effort, config) {
   mk_top_levels <- function(children, padding) {
     mk_folded_info <- function(effort) {
@@ -622,41 +655,62 @@ format_effort_node <- function(effort, padding, depth, total_effort, config) {
         ""
       )
     }
-    mk_effort_percents <- function(children) {
+    mk_efforts_info <- function(children) {
       sum_efforts <- map_dbl(children, `@`, "sum_effort")
+      sum_efforts_minutes <- as.integer(sum_efforts / 60)
+      hours <- sum_efforts_minutes %/% 60L
+      minutes <- sum_efforts_minutes %% 60L
+      minutes_chr <- if_else(
+        minutes <= 9L,
+        sprintf("0%d", minutes),
+        sprintf("%d", minutes)
+      )
+      effort_chr <- sprintf("%d:%s", hours, minutes_chr)
+      # effort_chr <- pad_left(effort_orig_chr)
       proportion <- sum_efforts / total_effort
-      percent <- as.integer(round(100 * proportion))
-      # spaces <- strrep(" ", 6L * depth)
-      # case_when(
-      #   sum_efforts == 0  ~ sprintf("%s  0%%", spaces),
-      #   proportion < 0.01 ~ sprintf("%s <1%%", spaces),
-      #   percent < 10L     ~ sprintf("%s  %d%%", spaces, percent),
-      #   proportion < 0.99 ~ sprintf("%s %d%%", spaces, percent),
-      #   TRUE              ~ sprintf("%s>99%%", spaces)
+      percent_int <- as.integer(round(100 * proportion))
+      # percent_chr <- case_when(
+      #   percent <= 9L ~ sprintf("%s %d%%", pad_effort, percent_int),
+      #   TRUE          ~ sprintf("%s%d%%", pad_effort, percent_int)
       # )
-      spaces <- strrep(" ", 5L * depth)
-      case_when(
-        percent <= 9L ~ sprintf("%s %d%%", spaces, percent),
-        TRUE          ~ sprintf("%s%d%%", spaces, percent)
+      percent_chr <- sprintf("%d%%", percent_int)
+      tibble(
+        effort  = effort_chr,
+        percent = percent_chr
       )
     }
+    # mk_efforts <- function(efforts_info) {
+    #   if (config$effort_style == "effort_and_percent") {
+    #     efforts <- paste0(
+    #       pad_effort,
+    #       pad_left(efforts_info$effort),
+    #       " ",
+    #       pad_left(sprintf("(%s)", efforts_info$percent))
+    #     )
+    #   }
+    #   else if (config$effort_style == "effort") {
+    #     efforts <- sprintf("%s%s", pad_effort, pad_left(efforts_info$effort))
+    #   }
+    #   else if (config$effort_style == "percent") {
+    #     efforts <- sprintf("%s%s", pad_effort, pad_left(efforts_info$percent))
+    #   }
+    #   else {
+    #     stop("Internal error: invalid value of config$effort_style: ", config$effort_style)
+    #   }
+    #   efforts
+    # }
     n <- length(children)
     glyphs <- `if`(
       n == 0L,
       character(0L),
       c(rep("├── ", n - 1L), "└── ")
     )
-    folded_info_orig <- map_chr(children, mk_folded_info)
-    max_folded_info <- max(nchar(folded_info_orig))
-    padding_width <- max_folded_info - nchar(folded_info_orig)
-    folded_info_padding <- strrep(" ", padding_width)
-    folded_info <- case_when(
-      folded_info_orig == "" ~ "",
-      TRUE                   ~ paste0(folded_info_padding, folded_info_orig)
-    )
+    folded_info <- pad_entries_only(map_chr(children, mk_folded_info))
     tasks <- sprintf("%s%s%s%s", padding, glyphs, folded_info, names(children))
-    efforts <- mk_effort_percents(children)
-    map2(tasks, efforts, ~ list(task = .x, effort = .y))
+    efforts_info <- mk_efforts_info(children)
+    # efforts <- mk_efforts(efforts_info)
+    transpose(tibble(task = tasks, efforts_info, depth = depth))
+    # map2(tasks, transpose(efforts_info), ~ list(task = .x, effort = .y))
   }
   mk_next_padding <- function(children, padding) {
     n <- length(children)
@@ -667,26 +721,36 @@ format_effort_node <- function(effort, padding, depth, total_effort, config) {
     )
     sprintf("%s%s", padding, new_padding)
   }
+  # mk_next_pad_effort <- function(top_levels) {
+  #   next_pad_effort <- `if`(
+  #     length(top_levels) == 0L,
+  #     "",
+  #     strrep(" ", nchar(top_levels[[1L]]$effort))
+  #   )
+  #   sprintf("  %s", next_pad_effort)
+  # }
   wkls_children <- `if`(
     config$show_all,
     effort@children,
     keep(effort@children, ~ .x@sum_effort > 0)
   )
   top_levels <- mk_top_levels(wkls_children, padding)
-  next_padding <- mk_next_padding(wkls_children, padding)
-  formatted_children <- map2(
-    .x           = wkls_children,
-    .y           = next_padding,
+  next_inputs <- list(
+    effort     = wkls_children,
+    padding    = mk_next_padding(wkls_children, padding),
+    depth      = depth + 1L
+    # pad_effort = mk_next_pad_effort(top_levels)
+  )
+  formatted_children <- pmap(
+    .l           = next_inputs,
+    # .x           = wkls_children,
+    # .y           = mk_next_padding(wkls_children, padding),
     .f           = format_effort,
-    depth        = depth + 1L,
     total_effort = total_effort,
     config       = config
   )
   combined_sections <- map2(top_levels, formatted_children, ~ c(list(.x), .y))
   flatten(combined_sections)
-  # # map2(top_levels, formatted_children, c)
-  # combined_sections <- map2(top_levels, formatted_children, c)
-  # flatten_chr(combined_sections)
 }
 
 # format_effort_node_folded <- function(effort, padding, depth, total_effort, config) {
@@ -707,19 +771,20 @@ setMethod("format_effort",
   definition = format_effort_leaf
 )
 
-effort_summary <- function(wkls, show_all = FALSE) {
-  config <- list(show_all = show_all)
+effort_summary <- function(wkls, show_all = FALSE, effort_style = "percent") {
+  config <- list(
+    effort_style = effort_style,
+    show_all = show_all
+  )
   effort <- effort_collection(wkls)
   stopifnot(effort@sum_effort > 0)
   tree_components <- format_effort_node(effort, "", 0L, effort@sum_effort, config)
-  tasks <- map_chr(tree_components, chuck, "task")
-  efforts <- map_chr(tree_components, chuck, "effort")
-  task_widths <- nchar(tasks)
-  stopifnot(length(task_widths) >= 1L)
-  max_task_width = max(task_widths)
-  task_padding <- strrep(" ", max_task_width + 2L - task_widths)
-  effort_summary <- paste0(tasks, task_padding, efforts)
-  effort_column_header_components <- c("Effort proportion", "-----------------")
+  effort_info_df <- mk_effort_info_df(tree_components)
+  effort_descr_df <- mk_effort_descr_df(effort_info_df, config)
+  efforts <- format_effort_tree(effort_descr_df, "", 0L)
+  tasks <- pad_right(map_chr(tree_components, "task"))
+  effort_summary <- sprintf("%s  %s", tasks, efforts)
+  effort_column_header_components <- c("Effort proportion", "─────────────────")
   effort_column_header_padding <- strrep(" ", max(nchar(effort_summary)) - 18L)
   effort_column_header <- paste0(
     c(" ", "."),
@@ -883,3 +948,115 @@ setMethod("filter_last_week",
   signature  = "worklogs",
   definition = filter_last_week_impl
 )
+
+mk_effort_info_df <- function(tree_components) {
+  tibble(
+    effort  = map_chr(tree_components, "effort"),
+    percent = map_chr(tree_components, "percent"),
+    depth   = map_int(tree_components, "depth")
+  )
+}
+
+mk_effort_descr_df <- function(effort_info_df, config) {
+  mk_effort_descr_subset <- function(effort_info_subset_df) {
+      if (config$effort_style == "effort_and_percent") {
+        efforts <- paste0(
+          pad_left(effort_info_subset_df$effort),
+          " ",
+          pad_left(sprintf("(%s)", effort_info_subset_df$percent))
+        )
+      }
+      else if (config$effort_style == "effort") {
+        efforts <- pad_left(effort_info_subset_df$effort)
+      }
+      else if (config$effort_style == "percent") {
+        efforts <- pad_left(effort_info_subset_df$percent)
+      }
+      else {
+        stop(
+          "Internal error: invalid value of config$effort_style: ",
+          config$effort_style
+        )
+      }
+      tibble(
+        effort_descr = efforts,
+        depth        = effort_info_subset_df$depth
+      )
+  }
+  description_df <- tibble(
+    descr = NA_character_,
+    depth = effort_info_df$depth
+  )
+  for (depth in unique(effort_info_df$depth)) {
+    is_depth <- effort_info_df$depth %in% depth
+    description_df[is_depth, ] <- mk_effort_descr_subset(effort_info_df[is_depth, ])
+  }
+  description_df
+}
+
+format_effort_tree <- function(effort_descr_df, padding, depth) {
+  mk_next_padding <- function(children, padding, curr_effort_descr) {
+    n <- length(children)
+    curr_effort_padding <- `if`(
+      length(curr_effort_descr) == 0L,
+      character(0L),
+      # strrep(" ", nchar(curr_effort_descr[1L]) + 1L)
+      strrep(" ", nchar(curr_effort_descr[1L]) + 4L)
+    )
+    new_padding <- `if`(
+      n == 0L,
+      character(0L),
+      c(rep("│  ", n - 1L), "   ")
+    )
+    sprintf("%s%s%s", padding, new_padding, curr_effort_padding)
+  }
+  mk_glyphs <- function() {
+    n <- length(curr_depth_indices)
+    if (n == 0L) {
+      glyphs <- character(0L)
+    }
+    else if (n == 1L) {
+      glyphs <- "─── "
+    }
+    else {
+      glyphs <- c(
+        "┌── ",
+        rep("├── ", n - 2L),
+        "└── "
+      )
+    }
+    glyphs
+  }
+  curr_depth_indices <- which(effort_descr_df$depth == depth)
+  if (length(curr_depth_indices) == 0L) {
+    return(character(0L))
+  }
+  subset_index_pairs_df <- tibble(
+    lower = curr_depth_indices + 1L,
+    upper = c(curr_depth_indices[-1L], nrow(effort_descr_df) + 1L)
+  )
+  # subset_index_pairs_df <- subset_index_pairs_orig_df[
+  #   subset_index_pairs_orig_df$lower < subset_index_pairs_orig_df$upper,
+  # ]
+  subset_df_list <- pmap(
+    .l = subset_index_pairs_df,
+    .f = function(lower, upper) effort_descr_df[head(lower : upper, -1L), ]
+  )
+  curr_effort_descr <- effort_descr_df$descr[curr_depth_indices]
+  glyphs <- mk_glyphs()
+  top_levels <- sprintf(
+    "%s%s%s",
+    padding,
+    glyphs,
+    curr_effort_descr
+  )
+  next_padding <- mk_next_padding(subset_df_list, padding, curr_effort_descr)
+  formatted_children <- map2(
+    .x    = subset_df_list,
+    .y    = next_padding,
+    .f    = format_effort_tree,
+    depth = depth + 1L
+  )
+  combined_sections <- map2(top_levels, formatted_children, c)
+  flatten_chr(combined_sections)
+}
