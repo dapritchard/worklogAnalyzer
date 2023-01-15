@@ -615,13 +615,29 @@ setGeneric("format_effort",
 
 pad_left <- function(s) {
   stopifnot(is.character(s))
+  if (length(s) == 0L) {
+    return(s)
+  }
   n_chars <- nchar(s)
   padding <- strrep(" ", max(n_chars) - n_chars)
   paste0(padding, s)
 }
 
-pad_nonempty <- function(s) {
+pad_right <- function(s) {
   stopifnot(is.character(s))
+  if (length(s) == 0L) {
+    return(s)
+  }
+  n_chars <- nchar(s)
+  padding <- strrep(" ", max(n_chars) - n_chars)
+  paste0(s, padding)
+}
+
+pad_entries_only <- function(s) {
+  stopifnot(is.character(s))
+  if (length(s) == 0L) {
+    return(s)
+  }
   n_chars <- nchar(s)
   padding <- case_when(
     s == "" ~ "",
@@ -689,11 +705,11 @@ format_effort_node <- function(effort, padding, depth, total_effort, config) {
       character(0L),
       c(rep("├── ", n - 1L), "└── ")
     )
-    folded_info <- pad_nonempty(map_chr(children, mk_folded_info))
+    folded_info <- pad_entries_only(map_chr(children, mk_folded_info))
     tasks <- sprintf("%s%s%s%s", padding, glyphs, folded_info, names(children))
     efforts_info <- mk_efforts_info(children)
     # efforts <- mk_efforts(efforts_info)
-    transpose(tibble(tasks = tasks, efforts_info, depth = depth))
+    transpose(tibble(task = tasks, efforts_info, depth = depth))
     # map2(tasks, transpose(efforts_info), ~ list(task = .x, effort = .y))
   }
   mk_next_padding <- function(children, padding) {
@@ -762,15 +778,13 @@ effort_summary <- function(wkls, show_all = FALSE, effort_style = "percent") {
   )
   effort <- effort_collection(wkls)
   stopifnot(effort@sum_effort > 0)
-  tree_components <- format_effort_node(effort, "", "", effort@sum_effort, config)
-  tasks <- map_chr(tree_components, chuck, "task")
-  efforts <- map_chr(tree_components, chuck, "effort")
-  task_widths <- nchar(tasks)
-  stopifnot(length(task_widths) >= 1L)
-  max_task_width = max(task_widths)
-  task_padding <- strrep(" ", max_task_width + 2L - task_widths)
-  effort_summary <- paste0(tasks, task_padding, efforts)
-  effort_column_header_components <- c("Effort proportion", "-----------------")
+  tree_components <- format_effort_node(effort, "", 0L, effort@sum_effort, config)
+  effort_info_df <- mk_effort_info_df(tree_components)
+  effort_descr_df <- mk_effort_descr_df(effort_info_df, config)
+  efforts <- format_effort_tree(effort_descr_df, "", 0L)
+  tasks <- pad_right(map_chr(tree_components, "task"))
+  effort_summary <- sprintf("%s  %s", tasks, efforts)
+  effort_column_header_components <- c("Effort proportion", "─────────────────")
   effort_column_header_padding <- strrep(" ", max(nchar(effort_summary)) - 18L)
   effort_column_header <- paste0(
     c(" ", "."),
@@ -936,15 +950,14 @@ setMethod("filter_last_week",
 )
 
 mk_effort_info_df <- function(tree_components) {
-  t_tree_components <- transpose(tree_components)
   tibble(
-    effort  = flatten_chr(t_tree_components$effort),
-    percent = flatten_chr(t_tree_components$percent),
-    depth = flatten_int(t_tree_components$depth)
+    effort  = map_chr(tree_components, "effort"),
+    percent = map_chr(tree_components, "percent"),
+    depth   = map_int(tree_components, "depth")
   )
 }
 
-mk_effort_descr <- function(effort_info_df, config) {
+mk_effort_descr_df <- function(effort_info_df, config) {
   mk_effort_descr_subset <- function(effort_info_subset_df) {
       if (config$effort_style == "effort_and_percent") {
         efforts <- paste0(
@@ -997,6 +1010,23 @@ format_effort_tree <- function(effort_descr_df, padding, depth) {
     )
     sprintf("%s%s%s", padding, new_padding, curr_effort_padding)
   }
+  mk_glyphs <- function() {
+    n <- length(curr_depth_indices)
+    if (n == 0L) {
+      glyphs <- character(0L)
+    }
+    else if (n == 1L) {
+      glyphs <- "─── "
+    }
+    else {
+      glyphs <- c(
+        "┌── ",
+        rep("├── ", n - 2L),
+        "└── "
+      )
+    }
+    glyphs
+  }
   curr_depth_indices <- which(effort_descr_df$depth == depth)
   if (length(curr_depth_indices) == 0L) {
     return(character(0L))
@@ -1012,13 +1042,8 @@ format_effort_tree <- function(effort_descr_df, padding, depth) {
     .l = subset_index_pairs_df,
     .f = function(lower, upper) effort_descr_df[head(lower : upper, -1L), ]
   )
-  n <- length(curr_depth_indices)
-  glyphs <- `if`(
-    n == 0L,
-    character(0L),
-    c(rep("├── ", n - 1L), "└── ")
-  )
   curr_effort_descr <- effort_descr_df$descr[curr_depth_indices]
+  glyphs <- mk_glyphs()
   top_levels <- sprintf(
     "%s%s%s",
     padding,
