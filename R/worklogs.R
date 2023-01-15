@@ -934,3 +934,104 @@ setMethod("filter_last_week",
   signature  = "worklogs",
   definition = filter_last_week_impl
 )
+
+mk_effort_info_df <- function(tree_components) {
+  t_tree_components <- transpose(tree_components)
+  tibble(
+    effort  = flatten_chr(t_tree_components$effort),
+    percent = flatten_chr(t_tree_components$percent),
+    depth = flatten_int(t_tree_components$depth)
+  )
+}
+
+mk_effort_descr <- function(effort_info_df, config) {
+  mk_effort_descr_subset <- function(effort_info_subset_df) {
+      if (config$effort_style == "effort_and_percent") {
+        efforts <- paste0(
+          pad_left(effort_info_subset_df$effort),
+          " ",
+          pad_left(sprintf("(%s)", effort_info_subset_df$percent))
+        )
+      }
+      else if (config$effort_style == "effort") {
+        efforts <- pad_left(effort_info_subset_df$effort)
+      }
+      else if (config$effort_style == "percent") {
+        efforts <- pad_left(effort_info_subset_df$percent)
+      }
+      else {
+        stop(
+          "Internal error: invalid value of config$effort_style: ",
+          config$effort_style
+        )
+      }
+      tibble(
+        effort_descr = efforts,
+        depth        = effort_info_subset_df$depth
+      )
+  }
+  description_df <- tibble(
+    descr = NA_character_,
+    depth = effort_info_df$depth
+  )
+  for (depth in unique(effort_info_df$depth)) {
+    is_depth <- effort_info_df$depth %in% depth
+    description_df[is_depth, ] <- mk_effort_descr_subset(effort_info_df[is_depth, ])
+  }
+  description_df
+}
+
+format_effort_tree <- function(effort_descr_df, padding, depth) {
+  mk_next_padding <- function(children, padding, curr_effort_descr) {
+    n <- length(children)
+    curr_effort_padding <- `if`(
+      length(curr_effort_descr) == 0L,
+      character(0L),
+      # strrep(" ", nchar(curr_effort_descr[1L]) + 1L)
+      strrep(" ", nchar(curr_effort_descr[1L]) + 4L)
+    )
+    new_padding <- `if`(
+      n == 0L,
+      character(0L),
+      c(rep("│  ", n - 1L), "   ")
+    )
+    sprintf("%s%s%s", padding, new_padding, curr_effort_padding)
+  }
+  curr_depth_indices <- which(effort_descr_df$depth == depth)
+  if (length(curr_depth_indices) == 0L) {
+    return(character(0L))
+  }
+  subset_index_pairs_df <- tibble(
+    lower = curr_depth_indices + 1L,
+    upper = c(curr_depth_indices[-1L], nrow(effort_descr_df) + 1L)
+  )
+  # subset_index_pairs_df <- subset_index_pairs_orig_df[
+  #   subset_index_pairs_orig_df$lower < subset_index_pairs_orig_df$upper,
+  # ]
+  subset_df_list <- pmap(
+    .l = subset_index_pairs_df,
+    .f = function(lower, upper) effort_descr_df[head(lower : upper, -1L), ]
+  )
+  n <- length(curr_depth_indices)
+  glyphs <- `if`(
+    n == 0L,
+    character(0L),
+    c(rep("├── ", n - 1L), "└── ")
+  )
+  curr_effort_descr <- effort_descr_df$descr[curr_depth_indices]
+  top_levels <- sprintf(
+    "%s%s%s",
+    padding,
+    glyphs,
+    curr_effort_descr
+  )
+  next_padding <- mk_next_padding(subset_df_list, padding, curr_effort_descr)
+  formatted_children <- map2(
+    .x    = subset_df_list,
+    .y    = next_padding,
+    .f    = format_effort_tree,
+    depth = depth + 1L
+  )
+  combined_sections <- map2(top_levels, formatted_children, c)
+  flatten_chr(combined_sections)
+}
