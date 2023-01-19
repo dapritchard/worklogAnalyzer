@@ -1061,6 +1061,9 @@ format_effort_tree <- function(effort_descr_df, padding, depth) {
   flatten_chr(combined_sections)
 }
 
+# TODO: check the following:
+# - at least 2 out of 3 of start_label, end_label, and end_format
+# - exactly the right corresponding formatting inputs
 wkls_config <- function(description_label,
                         start_label,
                         start_format,
@@ -1072,14 +1075,14 @@ wkls_config <- function(description_label,
                         timezone) {
   stopifnot(
     is_string(description_label),
-    is_string(start_label),
-    is_string(start_format),
-    is_string(end_label),
-    is_string(end_format),
-    is_string(duration_label),
-    is_string(duration_format),
-    is_string(tags_label),
-    is_string(timezone)
+    is_maybe_string(start_label),
+    is_maybe_string(start_format),
+    is_maybe_string(end_label),
+    is_maybe_string(end_format),
+    is_maybe_string(duration_label),
+    is_maybe_string(duration_format),
+    is_maybe_string(tags_label),
+    is_maybe_string(timezone)
   )
   config <- list(
     labels = list(

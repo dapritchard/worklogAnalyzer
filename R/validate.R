@@ -12,3 +12,7 @@ is_bool <- function(x) {
 is_string <- function(x) {
   is_chr_nomiss(x) && (length(x) == 1L)
 }
+
+is_maybe_string <- function(x) {
+  is.character(x) && (length(x) == 1L)
+}
