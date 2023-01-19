@@ -1060,3 +1060,41 @@ format_effort_tree <- function(effort_descr_df, padding, depth) {
   combined_sections <- map2(top_levels, formatted_children, c)
   flatten_chr(combined_sections)
 }
+
+wkls_config <- function(description_label,
+                        start_label,
+                        start_format,
+                        end_label,
+                        end_format
+                        duration_label,
+                        duration_format,
+                        tags_label,
+                        timezone) {
+  stopifnot(
+    is_string(description_label),
+    is_string(start_label),
+    is_string(start_format),
+    is_string(end_label),
+    is_string(end_format),
+    is_string(duration_label),
+    is_string(duration_format),
+    is_string(tags_label),
+    is_string(timezone)
+  )
+  config <- list(
+    labels = list(
+      description = description_label,
+      start       = start_label,
+      end         = end_label,
+      duration    = duration_label,
+      tags        = tags_label
+    ),
+    formats = list(
+      start    = start_format,
+      end      = end_format,
+      duration = duration_format
+    ),
+    timezone = timezone
+  )
+  structure(.Data = config, class = "wkls_config")
+}
