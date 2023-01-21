@@ -89,8 +89,8 @@ setClass("worklogs_node",
 )
 
 setClass("worklogs_leaf",
-  slots     = c(worklogs = "data.frame"),
-  prototype = list(data.frame())
+  slots     = c(worklogs = "data.frame", config = "worklogs_config"),
+  prototype = list(worklogs = data.frame(), config = new("worklogs_config"))
 )
 
 setClassUnion("worklogs", c("worklogs_node", "worklogs_leaf"))
@@ -117,13 +117,22 @@ validity_worklogs_node <- function(object) {
 setValidity("worklogs_node", validity_worklogs_node)
 
 setGeneric("worklogs",
-  def       = function(wkls, split_dfs) standardGeneric("worklogs"),
+  def       = function(wkls, split_dfs, config) standardGeneric("worklogs"),
   signature = "wkls"
 )
 
-mk_worklogs_node <- function(wkls, split_dfs) {
-  stopifnot(is.list(wkls), is_bool(split_dfs))
-  raw_worklogs_node <- map(wkls, worklogs, split_dfs = split_dfs)
+mk_worklogs_node <- function(wkls, split_dfs, config) {
+  stopifnot(
+    is.list(wkls),
+    is_bool(split_dfs),
+    is(config, "worklogs_config")
+  )
+  raw_worklogs_node <- map(
+    .x        = wkls,
+    .f        = worklogs,
+    split_dfs = split_dfs,
+    config    = config
+  )
   new("worklogs_node", children = raw_worklogs_node, fold_status = "unfolded")
 }
 
@@ -132,29 +141,30 @@ setMethod("worklogs",
   definition = mk_worklogs_node
 )
 
-mk_worklogs_leafs <- function(wkls, split_dfs) {
+mk_worklogs_leafs <- function(wkls, split_dfs, config) {
   `if`(
     split_dfs,
-    mk_worklogs_leafs_split_yes(wkls),
-    mk_worklogs_leafs_split_no(wkls)
+    mk_worklogs_leafs_split_yes(wkls, config),
+    mk_worklogs_leafs_split_no(wkls, config)
   )
 }
 
-mk_worklogs_leafs_split_yes <- function(wkls) {
-  stopifnot(is.data.frame(wkls))
-  raw_tibble <- as_tibble(wkls)
-  raw_leafs <- split(raw_tibble, raw_tibble$task)
-  worklogs_leafs_list <- map(raw_leafs, ~ new("worklogs_leaf", worklogs = .x))
+mk_worklogs_leafs_split_yes <- function(wkls, config) {
+  stopifnot(is.data.frame(wkls), is(config, "worklogs_config"))
+  raw_leafs <- split(wkls, wkls[[config@labels@description]])  # TODO: helper function for wkls[[config@labels@description]]
+  worklogs_leafs_list <- map(
+    .x = raw_leafs,
+    .f = ~ new("worklogs_leaf", worklogs = .x, config = config)
+  )
   new("worklogs_node", children = worklogs_leafs_list, fold_status = "unfolded")
 }
 
-mk_worklogs_leafs_split_no <- function(wkls) {
+mk_worklogs_leafs_split_no <- function(wkls, config) {
   stopifnot(
     is.data.frame(wkls),
-    length(unique(wkls$task)) <= 1L
+    length(unique(wkls[[config@labels@description]])) <= 1L  # TODO: helper function for wkls[[config@labels@description]]
   )
-  raw_leaf <- as_tibble(wkls)
-  worklogs_leaf <- new("worklogs_leaf", worklogs = raw_leaf)
+  worklogs_leaf <- new("worklogs_leaf", worklogs = wkls, config = config)
 }
 
 setMethod("worklogs",
