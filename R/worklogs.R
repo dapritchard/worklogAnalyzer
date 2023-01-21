@@ -518,10 +518,13 @@ setGeneric("collect_worklogs",
   signature = "wkls"
 )
 
+
+# Collect worklogs (e.g. reassemble into a data frame) -------------------------
+
 collect_worklogs_node <- function(wkls, parent_task) {
   update_task_name <- function(wkls_df) {
-    stopifnot("task" %in% names(wkls_df))
-    wkls_df$task <- parent_task
+    description_label <- attr(wkls_df, "description_label", TRUE)
+    wkls_df[[description_label]] <- parent_task
     wkls_df
   }
   stopifnot(is(wkls, "worklogs_node"))
@@ -541,7 +544,10 @@ setMethod("collect_worklogs",
 
 collect_worklogs_leaf <- function(wkls, parent_task) {
   stopifnot(is(wkls, "worklogs_leaf"))
-  wkls@worklogs
+  structure(
+    .Data             = wkls@worklogs,
+    description_label = config@labels@description
+  )
 }
 
 setMethod("collect_worklogs",
@@ -552,6 +558,7 @@ setMethod("collect_worklogs",
 as_tibble.worklogs_node <- function(x, ...) {
   collected_worklogs_list <- collect_worklogs_node(x, "<top level>")
   collected_worklogs <- bind_rows(collected_worklogs_list)
+  attr(collected_worklogs, "description_label") <- NULL
   as_tibble(collected_worklogs, ...)
 }
 
