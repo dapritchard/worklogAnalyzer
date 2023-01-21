@@ -1061,18 +1061,61 @@ format_effort_tree <- function(effort_descr_df, padding, depth) {
   flatten_chr(combined_sections)
 }
 
+setClass("config_labels",
+  slots = c(
+    description = "character",
+    start       = "character",
+    end         = "character",
+    duration    = "character",
+    tags        = "character"
+ ),
+ prototype = list(
+    description = NA_character_,
+    start       = NA_character_,
+    end         = NA_character_,
+    duration    = NA_character_,
+    tags        = NA_character_
+  )
+)
+
+setClass("config_formats",
+  slots = c(
+    start    = "character",
+    end      = "character",
+    duration = "character"
+ ),
+ prototype = list(
+    start    = NA_character_,
+    end      = NA_character_,
+    duration = NA_character_
+  )
+)
+
+setClass("worklogs_config",
+  slots = c(
+    labels   = "config_labels",
+    formats  = "config_formats",
+    timezone = "character"
+  ),
+  prototype = list(
+    labels  = new("config_labels"),
+    formats = new("config_formats"),
+    timezone = NA_character_
+  )
+)
+
 # TODO: check the following:
 # - at least 2 out of 3 of start_label, end_label, and end_format
 # - exactly the right corresponding formatting inputs
-wkls_config <- function(description_label,
-                        start_label,
-                        start_format,
-                        end_label,
-                        end_format
-                        duration_label,
-                        duration_format,
-                        tags_label,
-                        timezone) {
+worklogs_config <- function(description_label,
+                            start_label,
+                            start_format,
+                            end_label,
+                            end_format,
+                            duration_label,
+                            duration_format,
+                            tags_label,
+                            timezone) {
   stopifnot(
     is_string(description_label),
     is_maybe_string(start_label),
@@ -1084,20 +1127,19 @@ wkls_config <- function(description_label,
     is_maybe_string(tags_label),
     is_maybe_string(timezone)
   )
-  config <- list(
-    labels = list(
+  new("worklogs_config",
+    labels = new("config_labels",
       description = description_label,
       start       = start_label,
       end         = end_label,
       duration    = duration_label,
       tags        = tags_label
     ),
-    formats = list(
+    formats = new("config_formats",
       start    = start_format,
       end      = end_format,
       duration = duration_format
     ),
     timezone = timezone
   )
-  structure(.Data = config, class = "wkls_config")
 }
