@@ -1,3 +1,5 @@
+# `worklogs` configuration classes ---------------------------------------------
+
 setClass("config_labels",
   slots = c(
     description = "character",
@@ -80,6 +82,10 @@ worklogs_config <- function(description_label,
     timezone = timezone
   )
 }
+
+
+# `worklog` class defintions ---------------------------------------------------
+
 setClass("worklogs_node",
   slots     = c(children = "list", fold_status = "character"),
   prototype = list(
@@ -171,6 +177,9 @@ setMethod("worklogs",
   signature  = "data.frame",
   definition = mk_worklogs_leafs
 )
+
+
+# `worklogs` `show` method -----------------------------------------------------
 
 setGeneric("count_descendents",
   def = function(wkls) standardGeneric("count_descendents")
@@ -286,6 +295,9 @@ setMethod("show",
   signature  = "worklogs",
   definition = print_worklogs
 )
+
+
+# Updating `worklog` graph elements --------------------------------------------
 
 setGeneric("update_child",
   def       = function(wkls, path, parents, f) standardGeneric("update_child"),
@@ -433,6 +445,9 @@ setMethod("fold_children",
   definition = fold_children_impl
 )
 
+
+# Extract `worklog` graph elements -------------------------------------------------------
+
 setGeneric("extract_worklogs_impl",
   def       = function(wkls, path, parents) standardGeneric("extract_worklogs_impl"),
   signature = "wkls"
@@ -545,7 +560,7 @@ as_tibble.worklogs_leaf <- function(x, ...) {
 }
 
 
-# effort -----------------------------------------------------------------------
+# Effort summary ---------------------------------------------------------------
 
 # TODO: create validObject for the various classes
 
