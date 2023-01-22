@@ -930,8 +930,7 @@ setMethod("update_worklogs",
 
 update_worklogs_leaf <- function(wkls, f) {
   stopifnot(is(wkls, "worklogs_leaf"))
-  wkls@worklogs <- f(wkls@worklogs)
-  wkls
+  f(wkls)
 }
 
 setMethod("update_worklogs",
@@ -945,8 +944,11 @@ setGeneric("filter_time_before",
 )
 
 filter_time_before_impl <- function(wkls, datetime) {
-  filter_fcn <- function(wkls_df) {
-    wkls_df[wkls_df$start < datetime, ]
+  filter_fcn <- function(wkls) {
+    start_label <- wkls@config@labels@start
+    wkls_df <- wkls@worklogs[[start_label]]
+    new_wkls_df <- wkls_df[wkls_df[[start_label]] < datetime, ]
+    new("worklogs_leaf", worklogs = new_wkls_df, config = wkls@config)
   }
   stopifnot(
     is(wkls, "worklogs"),
@@ -966,8 +968,11 @@ setGeneric("filter_time_after",
 )
 
 filter_time_after_impl <- function(wkls, datetime) {
-  filter_fcn <- function(wkls_df) {
-    wkls_df[wkls_df$start >= datetime, ]
+  filter_fcn <- function(wkls) {
+    start_label <- wkls@config@labels@start
+    wkls_df <- wkls@worklogs
+    new_wkls_df <- wkls_df[wkls_df[[start_label]] >= datetime, ]
+    new("worklogs_leaf", worklogs = new_wkls_df, config = wkls@config)
   }
   stopifnot(
     is(wkls, "worklogs"),
@@ -988,10 +993,13 @@ setGeneric("filter_time_between",
 )
 
 filter_time_between_impl <- function(wkls, before_datetime, after_datetime) {
-  filter_fcn <- function(wkls_df) {
-    is_after_start <- before_datetime <= wkls_df$start
-    is_before_end <- wkls_df$start < after_datetime
-    wkls_df[is_after_start & is_before_end, ]
+  filter_fcn <- function(wkls) {
+    start_label <- wkls@config@labels@start
+    wkls_df <- wkls@worklogs
+    is_after_start <- before_datetime <= wkls_df[[start_label]]
+    is_before_end <- wkls_df[[start_label]] < after_datetime
+    new_wkls_df <- wkls_df[is_after_start & is_before_end, ]
+    new("worklogs_leaf", worklogs = new_wkls_df, config = wkls@config)
   }
   stopifnot(
     is(wkls, "worklogs"),
@@ -1022,8 +1030,11 @@ calc_this_week_start <- function(datetime) {
 # }
 
 filter_this_week_impl <- function(wkls) {
-  filter_fcn <- function(wkls_df) {
-    wkls_df[wkls_df$start >= this_week_start, ]
+  filter_fcn <- function(wkls) {
+    start_label <- wkls@config@labels@start
+    wkls_df <- wkls@worklogs
+    new_wkls_df <- wkls_df[wkls_df[[start_label]] >= this_week_start, ]
+    new("worklogs_leaf", worklogs = new_wkls_df, config = wkls@config)
   }
   stopifnot(is(wkls, "worklogs"))
   this_week_start <- calc_this_week_start(today())
@@ -1046,10 +1057,13 @@ calc_last_week_start <- function(datetime) {
 }
 
 filter_last_week_impl <- function(wkls) {
-  filter_fcn <- function(wkls_df) {
-    is_after_start <- last_week_start <= wkls_df$start
-    is_before_end <- wkls_df$start < this_week_start
-    wkls_df[is_after_start & is_before_end, ]
+  filter_fcn <- function(wkls) {
+    start_label <- wkls@config@labels@start
+    wkls_df <- wkls@worklogs
+    is_after_start <- last_week_start <= wkls_df[[start_label]]
+    is_before_end <- wkls_df[[start_label]] < this_week_start
+    new_wkls_df <- wkls_df[is_after_start & is_before_end, ]
+    new("worklogs_leaf", worklogs = new_wkls_df, config = wkls@config)
   }
   stopifnot(is(wkls, "worklogs"))
   today_datetime <- today()
@@ -1070,6 +1084,9 @@ mk_effort_info_df <- function(tree_components) {
     depth   = map_int(tree_components, "depth")
   )
 }
+
+
+# Formatting helper routines ---------------------------------------------------
 
 mk_effort_descr_df <- function(effort_info_df, config) {
   mk_effort_descr_subset <- function(effort_info_subset_df) {
