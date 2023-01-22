@@ -1,6 +1,6 @@
 # `worklogs` configuration classes ---------------------------------------------
 
-#' Configuration classes
+#' Configuration Classes
 #'
 #' S4 classes used in specifying worklogs configuration information.
 #'
@@ -53,9 +53,9 @@ setClass("worklogs_config",
   prototype = list(labels = new("config_labels"))
 )
 
-#' Create a `worklogs_config` object
+#' Create a `worklogs_config` Object
 #'
-#' This is the intended mechanism for for creating [worklogs_config()] objects.
+#' This is the intended mechanism for creating `worklogs_config` objects.
 #'
 #' @param description_label A string specifying the column name of the worklog
 #'   descriptions.
@@ -68,7 +68,7 @@ setClass("worklogs_config",
 #' @param tags_label Either a string specifying the column name of the worklog
 #'   tags, or `NA_character_` if there is no such column.
 #'
-#' @return A [worklogs_config()] object.
+#' @return A `worklogs_config` object.
 #'
 #' @export
 worklogs_config <- function(description_label,
@@ -105,6 +105,15 @@ worklogs_config <- function(description_label,
 
 # `worklog` class defintions ---------------------------------------------------
 
+#' Configuration Classes
+#'
+#' S4 classes used for representing worklogs.
+#'
+#' @slot children A named list of `worklogs` objects.
+#' @slot fold_status Either `"unfolded"` or `"folded"`.
+#'
+#' @name worklogs_classes
+#' @export
 setClass("worklogs_node",
   slots     = c(children = "list", fold_status = "character"),
   prototype = list(
@@ -113,11 +122,17 @@ setClass("worklogs_node",
   )
 )
 
+#' @slot worklogs A data frame of worklog entries.
+#' @slot config A `worklogs_config` object.
+#' @rdname worklogs_config_classes
+#' @export
 setClass("worklogs_leaf",
   slots     = c(worklogs = "data.frame", config = "worklogs_config"),
   prototype = list(worklogs = data.frame(), config = new("worklogs_config"))
 )
 
+#' @rdname worklogs_config_classes
+#' @export
 setClassUnion("worklogs", c("worklogs_node", "worklogs_leaf"))
 
 validity_worklogs_node <- function(object) {
@@ -141,6 +156,19 @@ validity_worklogs_node <- function(object) {
 
 setValidity("worklogs_node", validity_worklogs_node)
 
+#' Create a `worklogs` Object
+#'
+#' This is one of several available functions that can be used to create
+#' `worklogs` objects.
+#'
+#' @param wkls Either a data frame of worklog entries, or a named list
+#' @param split_dfs Either `TRUE` or `FALSE`.
+#' @param config A `worklogs_config` object.
+#'
+#' @return A [worklogs()] object.
+#'
+#' @name worklogs
+#' @export
 setGeneric("worklogs",
   def       = function(wkls, split_dfs, config) standardGeneric("worklogs"),
   signature = "wkls"
@@ -149,6 +177,7 @@ setGeneric("worklogs",
 mk_worklogs_node <- function(wkls, split_dfs, config) {
   stopifnot(
     is.list(wkls),
+    # TODO: should this verify that the list is named?
     is_bool(split_dfs),
     is(config, "worklogs_config")
   )
@@ -161,6 +190,8 @@ mk_worklogs_node <- function(wkls, split_dfs, config) {
   new("worklogs_node", children = raw_worklogs_node, fold_status = "unfolded")
 }
 
+#' @name worklogs
+#' @export
 setMethod("worklogs",
   signature  = "list",
   definition = mk_worklogs_node
@@ -192,6 +223,8 @@ mk_worklogs_leafs_split_no <- function(wkls, config) {
   worklogs_leaf <- new("worklogs_leaf", worklogs = wkls, config = config)
 }
 
+#' @name worklogs
+#' @export
 setMethod("worklogs",
   signature  = "data.frame",
   definition = mk_worklogs_leafs
@@ -310,6 +343,11 @@ setMethod("format_worklogs",
   definition = format_worklogs_leaf
 )
 
+#' Display a `worklogs` Object
+#'
+#' Prints a representation of the worklogs.
+#'
+#' @export
 setMethod("show",
   signature  = "worklogs",
   definition = print_worklogs
