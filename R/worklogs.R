@@ -17,54 +17,39 @@ setClass("config_labels",
   )
 )
 
-setClass("config_formats",
-  slots = c(
-    start    = "character",
-    end      = "character",
-    duration = "character"
- ),
- prototype = list(
-    start    = NA_character_,
-    end      = NA_character_,
-    duration = NA_character_
-  )
-)
+# #' @rdname configuration_classes
+# #' @export
+# setClass("config_formats",
+#   slots = c(
+#     start    = "character",
+#     end      = "character",
+#     duration = "character"
+#  ),
+#  prototype = list(
+#     start    = NA_character_,
+#     end      = NA_character_,
+#     duration = NA_character_
+#   )
+# )
 
 setClass("worklogs_config",
-  slots = c(
-    labels   = "config_labels",
-    formats  = "config_formats",
-    timezone = "character"
-  ),
-  prototype = list(
-    labels  = new("config_labels"),
-    formats = new("config_formats"),
-    timezone = NA_character_
-  )
+  slots     = c(labels = "config_labels"),
+  prototype = list(labels = new("config_labels"))
 )
 
 # TODO: check the following:
 # - at least 2 out of 3 of start_label, end_label, and end_format
-# - exactly the right corresponding formatting inputs
 worklogs_config <- function(description_label,
                             start_label,
-                            start_format,
                             end_label,
-                            end_format,
                             duration_label,
-                            duration_format,
-                            tags_label,
-                            timezone) {
+                            tags_label) {
   stopifnot(
     is_string(description_label),
     is_maybe_string(start_label),
-    is_maybe_string(start_format),
     is_maybe_string(end_label),
-    is_maybe_string(end_format),
     is_maybe_string(duration_label),
-    is_maybe_string(duration_format),
-    is_maybe_string(tags_label),
-    is_maybe_string(timezone)
+    is_maybe_string(tags_label)
   )
   new("worklogs_config",
     labels = new("config_labels",
@@ -73,13 +58,13 @@ worklogs_config <- function(description_label,
       end         = end_label,
       duration    = duration_label,
       tags        = tags_label
-    ),
-    formats = new("config_formats",
-      start    = start_format,
-      end      = end_format,
-      duration = duration_format
-    ),
-    timezone = timezone
+    )# ,
+    # formats = new("config_formats",
+    #   start    = start_format,
+    #   end      = end_format,
+    #   duration = duration_format
+    # ),
+    # timezone = timezone
   )
 }
 
