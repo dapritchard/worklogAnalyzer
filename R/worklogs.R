@@ -1,5 +1,18 @@
 # `worklogs` configuration classes ---------------------------------------------
 
+#' Configuration classes
+#'
+#' S4 classes used in specifying worklogs configuration information.
+#'
+#' @slot description A string specifying the column name of the worklog
+#'   description.
+#' @slot start A string specifying the column name of the worklog start times.
+#' @slot end A string specifying the column name of the worklog end times.
+#' @slot duration A string specifying the column name of the worklog durations.
+#' @slot tags A string specifying the column name of the worklog tags.
+#'
+#' @name worklogs_config_classes
+#' @export
 setClass("config_labels",
   slots = c(
     description = "character",
@@ -32,18 +45,39 @@ setClass("config_labels",
 #   )
 # )
 
+#' @slot labels A `config_labels` object.
+#' @rdname worklogs_config_classes
+#' @export
 setClass("worklogs_config",
   slots     = c(labels = "config_labels"),
   prototype = list(labels = new("config_labels"))
 )
 
-# TODO: check the following:
-# - at least 2 out of 3 of start_label, end_label, and end_format
+#' Create a `worklogs_config` object
+#'
+#' This is the intended mechanism for for creating [worklogs_config()] objects.
+#'
+#' @param description_label A string specifying the column name of the worklog
+#'   descriptions.
+#' @param start_label Either a string specifying the column name of the worklog
+#'   start times, or `NA_character_` if there is no such column.
+#' @param end_label Either a string specifying the column name of the worklog
+#'   end times, or `NA_character_` if there is no such column.
+#' @param duration_label Either a string specifying the column name of the
+#'   worklog duration entries, or `NA_character_` if there is no such column.
+#' @param tags_label Either a string specifying the column name of the worklog
+#'   tags, or `NA_character_` if there is no such column.
+#'
+#' @return A [worklogs_config()] object.
+#'
+#' @export
 worklogs_config <- function(description_label,
                             start_label,
                             end_label,
                             duration_label,
                             tags_label) {
+  # TODO: check the following:
+  # - at least 2 out of 3 of start_label, end_label, and end_format
   stopifnot(
     is_string(description_label),
     is_maybe_string(start_label),
