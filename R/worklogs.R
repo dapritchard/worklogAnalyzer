@@ -11,7 +11,7 @@
 #' @slot duration A string specifying the column name of the worklog durations.
 #' @slot tags A string specifying the column name of the worklog tags.
 #'
-#' @name worklogs_config_classes
+#' @name classes_worklogs_config
 #' @export
 setClass("config_labels",
   slots = c(
@@ -46,7 +46,7 @@ setClass("config_labels",
 # )
 
 #' @slot labels A `config_labels` object.
-#' @rdname worklogs_config_classes
+#' @rdname classes_worklogs_config
 #' @export
 setClass("worklogs_config",
   slots     = c(labels = "config_labels"),
@@ -112,7 +112,7 @@ worklogs_config <- function(description_label,
 #' @slot children A named list of `worklogs` objects.
 #' @slot fold_status Either `"unfolded"` or `"folded"`.
 #'
-#' @name worklogs_classes
+#' @name classes_worklogs
 #' @export
 setClass("worklogs_node",
   slots     = c(children = "list", fold_status = "character"),
@@ -124,14 +124,14 @@ setClass("worklogs_node",
 
 #' @slot worklogs A data frame of worklog entries.
 #' @slot config A `worklogs_config` object.
-#' @rdname worklogs_config_classes
+#' @rdname classes_worklogs_config
 #' @export
 setClass("worklogs_leaf",
   slots     = c(worklogs = "data.frame", config = "worklogs_config"),
   prototype = list(worklogs = data.frame(), config = new("worklogs_config"))
 )
 
-#' @rdname worklogs_config_classes
+#' @rdname classes_worklogs_config
 #' @export
 setClassUnion("worklogs", c("worklogs_node", "worklogs_leaf"))
 
@@ -165,7 +165,7 @@ setValidity("worklogs_node", validity_worklogs_node)
 #' @param split_dfs Either `TRUE` or `FALSE`.
 #' @param config A `worklogs_config` object.
 #'
-#' @return A [worklogs()] object.
+#' @return A `worklogs` object.
 #'
 #' @name worklogs
 #' @export
@@ -446,7 +446,20 @@ setMethod("fold_this",
   definition = fold_this_leaf
 )
 
+#' Fold Worklogs Below a Given Location
+#'
+#' Nodes in a worklogs tree can be flagged as being _folded_, which has the
+#' effect of letting functions that operate on worklogs know to consider all
+#' descendents of that node to belong to that node.
+#'
+#' @param wkls A `worklogs` object.
+#' @param path A character vector such that each element in vector corresponds
+#'   to the name of an element in the `worklogs` tree.
+#'
+#' @return A `worklogs` object.
+#' @export
 setGeneric("fold",
+  # TODO: consider calling this `fold_element` for better symmetry with `fold_children`
   def       = function(wkls, path) standardGeneric("fold"),
   signature = "wkls"
 )
@@ -487,6 +500,8 @@ setMethod("fold_these_children",
   definition = fold_these_children_leaf
 )
 
+#' @rdname fold
+#' @export
 setGeneric("fold_children",
   def       = function(wkls, path) standardGeneric("fold_children"),
   signature = "wkls"
@@ -496,6 +511,7 @@ fold_children_impl <- function(wkls, path) {
   stopifnot(is(wkls, "worklogs"))
   update_child(wkls, path, character(0L), fold_these_children)
 }
+
 
 setMethod("fold_children",
   signature  = "worklogs",
@@ -565,18 +581,24 @@ setGeneric("extract_worklogs",
   signature = "wkls"
 )
 
+#' Extract a Subtree From a Worklogs Tree
+#'
+#' @param wkls A `worklogs` object.
+#' @param path A character vector such that each element in vector corresponds
+#'
+#' @export
 setMethod("extract_worklogs",
   signature  = "worklogs",
   definition = function(wkls, path) extract_worklogs_impl(wkls, path, "")
 )
 
+
+# Collect worklogs (e.g. reassemble into a data frame) -------------------------
+
 setGeneric("collect_worklogs",
   def       = function(wkls, parent_task) standardGeneric("collect_worklogs"),
   signature = "wkls"
 )
-
-
-# Collect worklogs (e.g. reassemble into a data frame) -------------------------
 
 collect_worklogs_node <- function(wkls, parent_task) {
   update_task_name <- function(wkls_df) {
@@ -687,7 +709,6 @@ setClass("effort_leaf",
 )
 
 setClassUnion("effort", c("effort_node", "effort_leaf"))
-
 
 setMethod("fold_status",
   signature  = "effort_node",
@@ -942,6 +963,17 @@ setMethod("format_effort",
   definition = format_effort_leaf
 )
 
+#' Display a Summary of the Efforts in the Worklogs
+#'
+#' @param wkls A `worklogs` object.
+#' @param show_all Either `TRUE` or `FALSE` specifying whether or not to display
+#'   elements of the worklog tree that didn't have any effort.
+#' @param effort_style One of either "`effort`", `"percent"` or
+#'   `"effort_and_percent"` specifying what information to provide in the effort
+#'   summary.
+#' @return Returns `NULL`.
+#'
+#' @export
 effort_summary <- function(wkls, show_all = FALSE, effort_style = "percent") {
   config <- list(
     effort_style = effort_style,
@@ -995,6 +1027,15 @@ setMethod("update_worklogs",
   definition = update_worklogs_leaf
 )
 
+#' TODO
+#'
+#' @param wkls A `worklogs` object.
+#' @param datetime A length-1 datetime.
+#' @param before_datetime A length-1 datetime.
+#' @param after_datetime A length-1 datetime.
+#'
+#' @export
+#' @name filter_time
 setGeneric("filter_time_before",
   def       = function(wkls, datetime) standardGeneric("filter_time_before"),
   signature = "wkls"
@@ -1014,11 +1055,15 @@ filter_time_before_impl <- function(wkls, datetime) {
   update_worklogs(wkls, filter_fcn)
 }
 
+#' @rdname filter_time
+#' @export
 setMethod("filter_time_before",
   signature  = "worklogs",
   definition = filter_time_before_impl
 )
 
+#' @rdname filter_time
+#' @export
 setGeneric("filter_time_after",
   def       = function(wkls, datetime) standardGeneric("filter_time_after"),
   signature = "wkls"
@@ -1038,11 +1083,15 @@ filter_time_after_impl <- function(wkls, datetime) {
   update_worklogs(wkls, filter_fcn)
 }
 
+#' @rdname filter_time
+#' @export
 setMethod("filter_time_after",
   signature  = "worklogs",
   definition = filter_time_after_impl
 )
 
+#' @rdname filter_time
+#' @export
 setGeneric("filter_time_between",
   def = function(wkls, before_datetime, after_datetime)
     standardGeneric("filter_time_between"),
@@ -1066,11 +1115,15 @@ filter_time_between_impl <- function(wkls, before_datetime, after_datetime) {
   update_worklogs(wkls, filter_fcn)
 }
 
+#' @rdname filter_time
+#' @export
 setMethod("filter_time_between",
   signature  = "worklogs",
   definition = filter_time_between_impl
 )
 
+#' @rdname filter_time
+#' @export
 setGeneric("filter_this_week",
   def       = function(wkls) standardGeneric("filter_this_week"),
   signature = "wkls"
@@ -1098,11 +1151,15 @@ filter_this_week_impl <- function(wkls) {
   update_worklogs(wkls, filter_fcn)
 }
 
+#' @rdname filter_time
+#' @export
 setMethod("filter_this_week",
   signature  = "worklogs",
   definition = filter_this_week_impl
 )
 
+#' @rdname filter_time
+#' @export
 setGeneric("filter_last_week",
   def       = function(wkls) standardGeneric("filter_last_week"),
   signature = "wkls"
@@ -1129,6 +1186,8 @@ filter_last_week_impl <- function(wkls) {
   update_worklogs(wkls, filter_fcn)
 }
 
+#' @rdname filter_time
+#' @export
 setMethod("filter_last_week",
   signature  = "worklogs",
   definition = filter_last_week_impl
