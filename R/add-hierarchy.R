@@ -61,29 +61,29 @@ add_hierarchy_leaf_list <- function(worklogs_leaf, hierarchy) {
   stop("add_hierarchy_leaf_list is not yet implemented")
 }
 
-hierarchy_from_elements <- function(worklogs_df) {
-  split_children <- function(worklogs_df) {
-    parent <- map_chr(worklogs_df$parents, `[`, 1L)
-    worklogs_df$parents <- map(worklogs_df$parents, `[`, -1L)
-    children <- split(worklogs_df, parent)
-    structure(
-      .Data = map(children, hierarchy_from_elements),
-      class = "worklogs_node"
-    )
-  }
-  stopifnot(
-    is.data.frame(worklogs_df),
-    "parents" %in% names(worklogs_df),
-    is.list(worklogs_df$parents),
-    map_lgl(worklogs_df$parents, is.character)
-  )
-  has_parents <- map_int(worklogs_df$parents, length) >= 1L
-  wkls <- c(
-    split_children(worklogs_df[has_parents, ]),
-    mk_worklogs_leafs(worklogs_df[! has_parents, ])
-  )
-  structure(wkls, class = "worklogs_node")
-}
+# hierarchy_from_elements <- function(worklogs_df) {
+#   split_children <- function(worklogs_df) {
+#     parent <- map_chr(worklogs_df$parents, `[`, 1L)
+#     worklogs_df$parents <- map(worklogs_df$parents, `[`, -1L)
+#     children <- split(worklogs_df, parent)
+#     structure(
+#       .Data = map(children, hierarchy_from_elements),
+#       class = "worklogs_node"
+#     )
+#   }
+#   stopifnot(
+#     is.data.frame(worklogs_df),
+#     "parents" %in% names(worklogs_df),
+#     is.list(worklogs_df$parents),
+#     map_lgl(worklogs_df$parents, is.character)
+#   )
+#   has_parents <- map_int(worklogs_df$parents, length) >= 1L
+#   wkls <- c(
+#     split_children(worklogs_df[has_parents, ]),
+#     mk_worklogs_leafs(worklogs_df[! has_parents, ])
+#   )
+#   structure(wkls, class = "worklogs_node")
+# }
 
 worklogs_from_parents <- function(worklogs_df, parents_label, config) {
   stopifnot(
