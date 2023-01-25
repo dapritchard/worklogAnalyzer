@@ -1,6 +1,7 @@
+# TODO: make this an S4 method?
 subtree_extract <- function(worklogs_node, path) {
   stopifnot(
-    is_worklogs_node(worklogs_node),
+    is(worklogs_node, "worklogs_node"),
     is_chr_nomiss(path)
   )
   if (length(path) == 0L) {
@@ -8,10 +9,10 @@ subtree_extract <- function(worklogs_node, path) {
   }
   else if (length(path) == 1L) {
     child <- chuck(worklogs_node, path[1L])
-    if (is_worklogs_node(child)) {
+    if (is(child, "worklogs_node")) {
       return(child)
     }
-    else if (is_worklogs_leaf(child)) {
+    else if (is(child, "worklogs_leaf")) {
       return(worklogs_node[path[1L]])
     }
     else {
@@ -24,10 +25,10 @@ subtree_extract <- function(worklogs_node, path) {
   }
   else {
     child <- chuck(worklogs_node, path[1L])
-    if (is_worklogs_node(child)) {
+    if (is(child, "worklogs_node")) {
       return(subtree_extract(child, path[-1L]))
     }
-    else if (is_worklogs_leaf(child)) {
+    else if (is(child, "worklogs_leaf")) {
       stop("Cannot take the child of a leaf", call. = FALSE)
     }
     else {
@@ -42,7 +43,7 @@ subtree_extract <- function(worklogs_node, path) {
 
 subtree_remove <- function(worklogs_node, path) {
   stopifnot(
-    is_worklogs_node(worklogs_node),
+    is(worklogs_node, "worklogs_node"),
     is_chr_nomiss(path)
   )
   if (length(path) == 0L) {

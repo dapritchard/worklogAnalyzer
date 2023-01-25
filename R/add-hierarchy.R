@@ -1,3 +1,13 @@
+#' @importFrom methods new
+#' @importFrom methods is
+#' @importFrom methods validObject
+#' @import purrr
+#' @import dplyr
+#' @import tibble
+#' @importFrom utils head
+#' @importFrom utils read.csv
+NULL
+
 # TODO: is `add_hierarchy` and friends useful? Do we want it?
 
 add_hierarchy <- function(x, hierarchy) {
@@ -9,9 +19,9 @@ add_hierarchy <- function(x, hierarchy) {
   )
 }
 
-add_hierarchy_node <- function(worklogs_leaf, hierarchy) {
+add_hierarchy_node <- function(worklogs_node, hierarchy) {
   stopifnot(
-    is_worklogs_node(worklogs_node),
+    is(worklogs_node, "worklogs_node"),
     is.list(hierarchy) || is.character(hierarchy)
   )
   `if`(
@@ -23,7 +33,7 @@ add_hierarchy_node <- function(worklogs_leaf, hierarchy) {
 
 add_hierarchy_node_char <- function(worklogs_node, hierarchy) {
   stopifnot(
-    is_worklogs_node(worklogs_node),
+    is(worklogs_node, "worklogs_node"),
     is.character(hierarchy),
     ! is.na(hierarchy),
     length(hierarchy) == length(worklogs_node)
@@ -37,7 +47,7 @@ add_hierarchy_node_list <- function(worklogs_node, hierarchy) {
 
 add_hierarchy_leaf <- function(worklogs_leaf, hierarchy) {
   stopifnot(
-    is_worklogs_leaf(worklogs_leaf),
+    is(worklogs_leaf, "worklogs_leaf"),
     is.list(hierarchy) || is.character(hierarchy)
   )
   `if`(
@@ -49,7 +59,7 @@ add_hierarchy_leaf <- function(worklogs_leaf, hierarchy) {
 
 add_hierarchy_leaf_char <- function(worklogs_leaf, hierarchy) {
   stopifnot(
-    is_worklogs_leaf(worklogs_leaf),
+    is(worklogs_leaf, "worklogs_leaf"),
     is.character(hierarchy),
     ! is.na(hierarchy),
     length(hierarchy) == nrow(worklogs_leaf)
