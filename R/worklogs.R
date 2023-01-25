@@ -347,6 +347,7 @@ setMethod("format_worklogs",
 #'
 #' Prints a representation of the worklogs.
 #'
+#' @importMethodsFrom methods show
 #' @export
 setMethod("show",
   signature  = "worklogs",
@@ -625,7 +626,7 @@ collect_worklogs_leaf <- function(wkls, parent_task) {
   stopifnot(is(wkls, "worklogs_leaf"))
   structure(
     .Data             = wkls@worklogs,
-    description_label = config@labels@description
+    description_label = wkls@config@labels@description
   )
 }
 
@@ -1130,12 +1131,12 @@ setGeneric("filter_this_week",
 )
 
 calc_this_week_start <- function(datetime) {
-  n_day <- wday(datetime)
-  datetime - days(n_day - 1)
+  n_day <- lubridate::wday(datetime)
+  datetime - lubridate::days(n_day - 1)
 }
 
 # calc_this_week_end <- function(datetime) {
-#   n_day <- wday(datetime)
+#   n_day <- lubridate::wday(datetime)
 #   datetime + days(8 - n_day)
 # }
 
@@ -1147,7 +1148,7 @@ filter_this_week_impl <- function(wkls) {
     new("worklogs_leaf", worklogs = new_wkls_df, config = wkls@config)
   }
   stopifnot(is(wkls, "worklogs"))
-  this_week_start <- calc_this_week_start(today())
+  this_week_start <- calc_this_week_start(lubridate::today())
   update_worklogs(wkls, filter_fcn)
 }
 
@@ -1166,8 +1167,8 @@ setGeneric("filter_last_week",
 )
 
 calc_last_week_start <- function(datetime) {
-  n_day <- wday(datetime)
-  datetime - days(n_day + 6)
+  n_day <- lubridate::wday(datetime)
+  datetime - lubridate::days(n_day + 6)
 }
 
 filter_last_week_impl <- function(wkls) {
@@ -1180,7 +1181,7 @@ filter_last_week_impl <- function(wkls) {
     new("worklogs_leaf", worklogs = new_wkls_df, config = wkls@config)
   }
   stopifnot(is(wkls, "worklogs"))
-  today_datetime <- today()
+  today_datetime <- lubridate::today()
   last_week_start <- calc_last_week_start(today_datetime)
   this_week_start <- calc_this_week_start(today_datetime)
   update_worklogs(wkls, filter_fcn)
