@@ -1,5 +1,21 @@
 # `worklogs` configuration classes ---------------------------------------------
 
+#' Configuration Classes
+#'
+#' S4 classes used in specifying worklogs configuration information.
+#'
+#' @slot description A string specifying the column name of the worklog
+#'   description.
+#' @slot start A string specifying the column name of the worklog start times.
+#' @slot end A string specifying the column name of the worklog end times.
+#' @slot duration A string specifying the column name of the worklog durations.
+#' @slot tags A string specifying the column name of the worklog tags.
+#'
+#' @name classes_worklogs_config
+NULL
+
+#' @rdname classes_worklogs_config
+#' @export
 setClass("config_labels",
   slots = c(
     description = "character",
@@ -17,54 +33,60 @@ setClass("config_labels",
   )
 )
 
-setClass("config_formats",
-  slots = c(
-    start    = "character",
-    end      = "character",
-    duration = "character"
- ),
- prototype = list(
-    start    = NA_character_,
-    end      = NA_character_,
-    duration = NA_character_
-  )
-)
+# #' @rdname configuration_classes
+# #' @export
+# setClass("config_formats",
+#   slots = c(
+#     start    = "character",
+#     end      = "character",
+#     duration = "character"
+#  ),
+#  prototype = list(
+#     start    = NA_character_,
+#     end      = NA_character_,
+#     duration = NA_character_
+#   )
+# )
 
+#' @slot labels A `config_labels` object.
+#' @rdname classes_worklogs_config
+#' @export
 setClass("worklogs_config",
-  slots = c(
-    labels   = "config_labels",
-    formats  = "config_formats",
-    timezone = "character"
-  ),
-  prototype = list(
-    labels  = new("config_labels"),
-    formats = new("config_formats"),
-    timezone = NA_character_
-  )
+  slots     = c(labels = "config_labels"),
+  prototype = list(labels = new("config_labels"))
 )
 
-# TODO: check the following:
-# - at least 2 out of 3 of start_label, end_label, and end_format
-# - exactly the right corresponding formatting inputs
+#' Create a `worklogs_config` Object
+#'
+#' This is the intended mechanism for creating `worklogs_config` objects.
+#'
+#' @param description_label A string specifying the column name of the worklog
+#'   descriptions.
+#' @param start_label Either a string specifying the column name of the worklog
+#'   start times, or `NA_character_` if there is no such column.
+#' @param end_label Either a string specifying the column name of the worklog
+#'   end times, or `NA_character_` if there is no such column.
+#' @param duration_label Either a string specifying the column name of the
+#'   worklog duration entries, or `NA_character_` if there is no such column.
+#' @param tags_label Either a string specifying the column name of the worklog
+#'   tags, or `NA_character_` if there is no such column.
+#'
+#' @return A `worklogs_config` object.
+#'
+#' @export
 worklogs_config <- function(description_label,
                             start_label,
-                            start_format,
                             end_label,
-                            end_format,
                             duration_label,
-                            duration_format,
-                            tags_label,
-                            timezone) {
+                            tags_label) {
+  # TODO: check the following:
+  # - at least 2 out of 3 of start_label, end_label, and end_format
   stopifnot(
     is_string(description_label),
     is_maybe_string(start_label),
-    is_maybe_string(start_format),
     is_maybe_string(end_label),
-    is_maybe_string(end_format),
     is_maybe_string(duration_label),
-    is_maybe_string(duration_format),
-    is_maybe_string(tags_label),
-    is_maybe_string(timezone)
+    is_maybe_string(tags_label)
   )
   new("worklogs_config",
     labels = new("config_labels",
@@ -73,19 +95,31 @@ worklogs_config <- function(description_label,
       end         = end_label,
       duration    = duration_label,
       tags        = tags_label
-    ),
-    formats = new("config_formats",
-      start    = start_format,
-      end      = end_format,
-      duration = duration_format
-    ),
-    timezone = timezone
+    )# ,
+    # formats = new("config_formats",
+    #   start    = start_format,
+    #   end      = end_format,
+    #   duration = duration_format
+    # ),
+    # timezone = timezone
   )
 }
 
 
 # `worklog` class defintions ---------------------------------------------------
 
+#' Configuration Classes
+#'
+#' S4 classes used for representing worklogs.
+#'
+#' @slot children A named list of `worklogs` objects.
+#' @slot fold_status Either `"unfolded"` or `"folded"`.
+#'
+#' @name classes_worklogs
+NULL
+
+#' @rdname classes_worklogs
+#' @export
 setClass("worklogs_node",
   slots     = c(children = "list", fold_status = "character"),
   prototype = list(
@@ -94,11 +128,17 @@ setClass("worklogs_node",
   )
 )
 
+#' @slot worklogs A data frame of worklog entries.
+#' @slot config A `worklogs_config` object.
+#' @rdname classes_worklogs_config
+#' @export
 setClass("worklogs_leaf",
   slots     = c(worklogs = "data.frame", config = "worklogs_config"),
   prototype = list(worklogs = data.frame(), config = new("worklogs_config"))
 )
 
+#' @rdname classes_worklogs_config
+#' @export
 setClassUnion("worklogs", c("worklogs_node", "worklogs_leaf"))
 
 validity_worklogs_node <- function(object) {
@@ -122,6 +162,19 @@ validity_worklogs_node <- function(object) {
 
 setValidity("worklogs_node", validity_worklogs_node)
 
+#' Create a `worklogs` Object
+#'
+#' This is one of several available functions that can be used to create
+#' `worklogs` objects.
+#'
+#' @param wkls Either a data frame of worklog entries, or a named list
+#' @param split_dfs Either `TRUE` or `FALSE`.
+#' @param config A `worklogs_config` object.
+#'
+#' @return A `worklogs` object.
+#'
+#' @name worklogs
+#' @export
 setGeneric("worklogs",
   def       = function(wkls, split_dfs, config) standardGeneric("worklogs"),
   signature = "wkls"
@@ -130,6 +183,7 @@ setGeneric("worklogs",
 mk_worklogs_node <- function(wkls, split_dfs, config) {
   stopifnot(
     is.list(wkls),
+    # TODO: should this verify that the list is named?
     is_bool(split_dfs),
     is(config, "worklogs_config")
   )
@@ -142,6 +196,8 @@ mk_worklogs_node <- function(wkls, split_dfs, config) {
   new("worklogs_node", children = raw_worklogs_node, fold_status = "unfolded")
 }
 
+#' @rdname worklogs
+#' @export
 setMethod("worklogs",
   signature  = "list",
   definition = mk_worklogs_node
@@ -173,6 +229,8 @@ mk_worklogs_leafs_split_no <- function(wkls, config) {
   worklogs_leaf <- new("worklogs_leaf", worklogs = wkls, config = config)
 }
 
+#' @rdname worklogs
+#' @export
 setMethod("worklogs",
   signature  = "data.frame",
   definition = mk_worklogs_leafs
@@ -251,7 +309,8 @@ format_worklogs_node_unfolded <- function(wkls, padding) {
     glyphs <- `if`(
       n == 0L,
       character(0L),
-      c(rep("├── ", n - 1L), "└── ")
+      # c(rep("├── ", n - 1L), "└── ")
+      c(rep("\u251C\u2500\u2500 ", n - 1L), "\u2514\u2500\u2500 ")
     )
     folded_info <- map_chr(children, mk_folded_info)
     sprintf("%s%s%s%s", padding, glyphs, folded_info, names(children))
@@ -261,7 +320,8 @@ format_worklogs_node_unfolded <- function(wkls, padding) {
     new_padding <- `if`(
       n == 0L,
       character(0L),
-      c(rep("│  ", n - 1L), "   ")
+      # c(rep("│  ", n - 1L), "   ")
+      c(rep("\u2502  ", n - 1L), "   ")
     )
     sprintf("%s%s", padding, new_padding)
   }
@@ -291,6 +351,12 @@ setMethod("format_worklogs",
   definition = format_worklogs_leaf
 )
 
+#' Display a `worklogs` Object
+#'
+#' @param object A `worklogs` object.
+#'
+#' @importMethodsFrom methods show
+#' @export
 setMethod("show",
   signature  = "worklogs",
   definition = print_worklogs
@@ -389,7 +455,20 @@ setMethod("fold_this",
   definition = fold_this_leaf
 )
 
+#' Fold Worklogs Below a Given Location
+#'
+#' Nodes in a worklogs tree can be flagged as being _folded_, which has the
+#' effect of letting functions that operate on worklogs know to consider all
+#' descendents of that node to belong to that node.
+#'
+#' @param wkls A `worklogs` object.
+#' @param path A character vector such that each element in vector corresponds
+#'   to the name of an element in the `worklogs` tree.
+#'
+#' @return A `worklogs` object.
+#' @export
 setGeneric("fold",
+  # TODO: consider calling this `fold_element` for better symmetry with `fold_children`
   def       = function(wkls, path) standardGeneric("fold"),
   signature = "wkls"
 )
@@ -399,6 +478,8 @@ fold_impl <- function(wkls, path) {
   update_child(wkls, path, character(0L), fold_this)
 }
 
+#' @rdname fold
+#' @export
 setMethod("fold",
   signature  = "worklogs",
   definition = fold_impl
@@ -430,6 +511,8 @@ setMethod("fold_these_children",
   definition = fold_these_children_leaf
 )
 
+#' @rdname fold
+#' @export
 setGeneric("fold_children",
   def       = function(wkls, path) standardGeneric("fold_children"),
   signature = "wkls"
@@ -440,6 +523,8 @@ fold_children_impl <- function(wkls, path) {
   update_child(wkls, path, character(0L), fold_these_children)
 }
 
+#' @rdname fold
+#' @export
 setMethod("fold_children",
   signature  = "worklogs",
   definition = fold_children_impl
@@ -503,23 +588,31 @@ setMethod("extract_worklogs_impl",
   definition = extract_worklogs_impl_leaf
 )
 
+#' Extract a Subtree From a Worklogs Tree
+#'
+#' @param wkls A `worklogs` object.
+#' @param path A character vector such that each element in vector corresponds
+#'
+#' @export
 setGeneric("extract_worklogs",
   def       = function(wkls, path) standardGeneric("extract_worklogs"),
   signature = "wkls"
 )
 
+#' @rdname extract_worklogs
+#' @export
 setMethod("extract_worklogs",
   signature  = "worklogs",
   definition = function(wkls, path) extract_worklogs_impl(wkls, path, "")
 )
 
+
+# Collect worklogs (e.g. reassemble into a data frame) -------------------------
+
 setGeneric("collect_worklogs",
   def       = function(wkls, parent_task) standardGeneric("collect_worklogs"),
   signature = "wkls"
 )
-
-
-# Collect worklogs (e.g. reassemble into a data frame) -------------------------
 
 collect_worklogs_node <- function(wkls, parent_task) {
   update_task_name <- function(wkls_df) {
@@ -546,7 +639,7 @@ collect_worklogs_leaf <- function(wkls, parent_task) {
   stopifnot(is(wkls, "worklogs_leaf"))
   structure(
     .Data             = wkls@worklogs,
-    description_label = config@labels@description
+    description_label = wkls@config@labels@description
   )
 }
 
@@ -630,7 +723,6 @@ setClass("effort_leaf",
 )
 
 setClassUnion("effort", c("effort_node", "effort_leaf"))
-
 
 setMethod("fold_status",
   signature  = "effort_node",
@@ -817,7 +909,8 @@ format_effort_node <- function(effort, padding, depth, total_effort, config) {
     glyphs <- `if`(
       n == 0L,
       character(0L),
-      c(rep("├── ", n - 1L), "└── ")
+      # c(rep("├── ", n - 1L), "└── ")
+      c(rep("\u251C\u2500\u2500 ", n - 1L), "\u2514\u2500\u2500 ")
     )
     folded_info <- pad_entries_only(map_chr(children, mk_folded_info))
     tasks <- sprintf("%s%s%s%s", padding, glyphs, folded_info, names(children))
@@ -831,7 +924,8 @@ format_effort_node <- function(effort, padding, depth, total_effort, config) {
     new_padding <- `if`(
       n == 0L,
       character(0L),
-      c(rep("│  ", n - 1L), "   ")
+      # c(rep("│  ", n - 1L), "   ")
+      c(rep("\u2502  ", n - 1L), "   ")
     )
     sprintf("%s%s", padding, new_padding)
   }
@@ -885,6 +979,17 @@ setMethod("format_effort",
   definition = format_effort_leaf
 )
 
+#' Display a Summary of the Efforts in the Worklogs
+#'
+#' @param wkls A `worklogs` object.
+#' @param show_all Either `TRUE` or `FALSE` specifying whether or not to display
+#'   elements of the worklog tree that didn't have any effort.
+#' @param effort_style One of either "`effort`", `"percent"` or
+#'   `"effort_and_percent"` specifying what information to provide in the effort
+#'   summary.
+#' @return Returns `NULL`.
+#'
+#' @export
 effort_summary <- function(wkls, show_all = FALSE, effort_style = "percent") {
   config <- list(
     effort_style = effort_style,
@@ -938,6 +1043,20 @@ setMethod("update_worklogs",
   definition = update_worklogs_leaf
 )
 
+#' Filter worklogs by timestamp
+#'
+#' TODO
+#'
+#' @param wkls A `worklogs` object.
+#' @param datetime A length-1 datetime.
+#' @param before_datetime A length-1 datetime.
+#' @param after_datetime A length-1 datetime.
+#'
+#' @name filter_time
+NULL
+
+#' @export
+#' @rdname filter_time
 setGeneric("filter_time_before",
   def       = function(wkls, datetime) standardGeneric("filter_time_before"),
   signature = "wkls"
@@ -957,11 +1076,15 @@ filter_time_before_impl <- function(wkls, datetime) {
   update_worklogs(wkls, filter_fcn)
 }
 
+#' @rdname filter_time
+#' @export
 setMethod("filter_time_before",
   signature  = "worklogs",
   definition = filter_time_before_impl
 )
 
+#' @rdname filter_time
+#' @export
 setGeneric("filter_time_after",
   def       = function(wkls, datetime) standardGeneric("filter_time_after"),
   signature = "wkls"
@@ -981,11 +1104,15 @@ filter_time_after_impl <- function(wkls, datetime) {
   update_worklogs(wkls, filter_fcn)
 }
 
+#' @rdname filter_time
+#' @export
 setMethod("filter_time_after",
   signature  = "worklogs",
   definition = filter_time_after_impl
 )
 
+#' @rdname filter_time
+#' @export
 setGeneric("filter_time_between",
   def = function(wkls, before_datetime, after_datetime)
     standardGeneric("filter_time_between"),
@@ -1009,23 +1136,27 @@ filter_time_between_impl <- function(wkls, before_datetime, after_datetime) {
   update_worklogs(wkls, filter_fcn)
 }
 
+#' @rdname filter_time
+#' @export
 setMethod("filter_time_between",
   signature  = "worklogs",
   definition = filter_time_between_impl
 )
 
+#' @rdname filter_time
+#' @export
 setGeneric("filter_this_week",
   def       = function(wkls) standardGeneric("filter_this_week"),
   signature = "wkls"
 )
 
 calc_this_week_start <- function(datetime) {
-  n_day <- wday(datetime)
-  datetime - days(n_day - 1)
+  n_day <- lubridate::wday(datetime)
+  datetime - lubridate::days(n_day - 1)
 }
 
 # calc_this_week_end <- function(datetime) {
-#   n_day <- wday(datetime)
+#   n_day <- lubridate::wday(datetime)
 #   datetime + days(8 - n_day)
 # }
 
@@ -1037,23 +1168,27 @@ filter_this_week_impl <- function(wkls) {
     new("worklogs_leaf", worklogs = new_wkls_df, config = wkls@config)
   }
   stopifnot(is(wkls, "worklogs"))
-  this_week_start <- calc_this_week_start(today())
+  this_week_start <- calc_this_week_start(lubridate::today())
   update_worklogs(wkls, filter_fcn)
 }
 
+#' @rdname filter_time
+#' @export
 setMethod("filter_this_week",
   signature  = "worklogs",
   definition = filter_this_week_impl
 )
 
+#' @rdname filter_time
+#' @export
 setGeneric("filter_last_week",
   def       = function(wkls) standardGeneric("filter_last_week"),
   signature = "wkls"
 )
 
 calc_last_week_start <- function(datetime) {
-  n_day <- wday(datetime)
-  datetime - days(n_day + 6)
+  n_day <- lubridate::wday(datetime)
+  datetime - lubridate::days(n_day + 6)
 }
 
 filter_last_week_impl <- function(wkls) {
@@ -1066,12 +1201,14 @@ filter_last_week_impl <- function(wkls) {
     new("worklogs_leaf", worklogs = new_wkls_df, config = wkls@config)
   }
   stopifnot(is(wkls, "worklogs"))
-  today_datetime <- today()
+  today_datetime <- lubridate::today()
   last_week_start <- calc_last_week_start(today_datetime)
   this_week_start <- calc_this_week_start(today_datetime)
   update_worklogs(wkls, filter_fcn)
 }
 
+#' @rdname filter_time
+#' @export
 setMethod("filter_last_week",
   signature  = "worklogs",
   definition = filter_last_week_impl
@@ -1137,7 +1274,8 @@ format_effort_tree <- function(effort_descr_df, padding, depth) {
     new_padding <- `if`(
       n == 0L,
       character(0L),
-      c(rep("│  ", n - 1L), "   ")
+      # c(rep("│  ", n - 1L), "   ")
+      c(rep("\u2502  ", n - 1L), "   ")
     )
     sprintf("%s%s%s", padding, new_padding, curr_effort_padding)
   }
@@ -1147,13 +1285,17 @@ format_effort_tree <- function(effort_descr_df, padding, depth) {
       glyphs <- character(0L)
     }
     else if (n == 1L) {
-      glyphs <- "─── "
+      # glyphs <- "─── "
+      glyphs <- "\u2500\u2500\u2500 "
     }
     else {
       glyphs <- c(
-        "┌── ",
-        rep("├── ", n - 2L),
-        "└── "
+        # "┌── ",
+        "\u250c\u2500\u2500 ",
+        # rep("├── ", n - 2L),
+        rep("\u251c\u2500\u2500 ", n - 2L),
+        # "└── "
+        "\u2514\u2500\u2500 "
       )
     }
     glyphs
