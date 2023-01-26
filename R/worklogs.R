@@ -303,7 +303,8 @@ format_worklogs_node_unfolded <- function(wkls, padding) {
     glyphs <- `if`(
       n == 0L,
       character(0L),
-      c(rep("├── ", n - 1L), "└── ")
+      # c(rep("├── ", n - 1L), "└── ")
+      c(rep("\u251C\u2500\u2500 ", n - 1L), "\u2514\u2500\u2500 ")
     )
     folded_info <- map_chr(children, mk_folded_info)
     sprintf("%s%s%s%s", padding, glyphs, folded_info, names(children))
@@ -313,7 +314,8 @@ format_worklogs_node_unfolded <- function(wkls, padding) {
     new_padding <- `if`(
       n == 0L,
       character(0L),
-      c(rep("│  ", n - 1L), "   ")
+      # c(rep("│  ", n - 1L), "   ")
+      c(rep("\u2502  ", n - 1L), "   ")
     )
     sprintf("%s%s", padding, new_padding)
   }
@@ -896,7 +898,8 @@ format_effort_node <- function(effort, padding, depth, total_effort, config) {
     glyphs <- `if`(
       n == 0L,
       character(0L),
-      c(rep("├── ", n - 1L), "└── ")
+      # c(rep("├── ", n - 1L), "└── ")
+      c(rep("\u251C\u2500\u2500 ", n - 1L), "\u2514\u2500\u2500 ")
     )
     folded_info <- pad_entries_only(map_chr(children, mk_folded_info))
     tasks <- sprintf("%s%s%s%s", padding, glyphs, folded_info, names(children))
@@ -910,7 +913,8 @@ format_effort_node <- function(effort, padding, depth, total_effort, config) {
     new_padding <- `if`(
       n == 0L,
       character(0L),
-      c(rep("│  ", n - 1L), "   ")
+      # c(rep("│  ", n - 1L), "   ")
+      c(rep("\u2502  ", n - 1L), "   ")
     )
     sprintf("%s%s", padding, new_padding)
   }
@@ -1254,7 +1258,8 @@ format_effort_tree <- function(effort_descr_df, padding, depth) {
     new_padding <- `if`(
       n == 0L,
       character(0L),
-      c(rep("│  ", n - 1L), "   ")
+      # c(rep("│  ", n - 1L), "   ")
+      c(rep("\u2502  ", n - 1L), "   ")
     )
     sprintf("%s%s%s", padding, new_padding, curr_effort_padding)
   }
@@ -1264,13 +1269,17 @@ format_effort_tree <- function(effort_descr_df, padding, depth) {
       glyphs <- character(0L)
     }
     else if (n == 1L) {
-      glyphs <- "─── "
+      # glyphs <- "─── "
+      glyphs <- "\u2500\u2500\u2500 "
     }
     else {
       glyphs <- c(
-        "┌── ",
-        rep("├── ", n - 2L),
-        "└── "
+        # "┌── ",
+        "\u250c\u2500\u2500 ",
+        # rep("├── ", n - 2L),
+        rep("\u251c\u2500\u2500 ", n - 2L),
+        # "└── "
+        "\u2514\u2500\u2500 "
       )
     }
     glyphs
