@@ -12,6 +12,9 @@
 #' @slot tags A string specifying the column name of the worklog tags.
 #'
 #' @name classes_worklogs_config
+NULL
+
+#' @rdname classes_worklogs_config
 #' @export
 setClass("config_labels",
   slots = c(
@@ -113,6 +116,9 @@ worklogs_config <- function(description_label,
 #' @slot fold_status Either `"unfolded"` or `"folded"`.
 #'
 #' @name classes_worklogs
+NULL
+
+#' @rdname classes_worklogs
 #' @export
 setClass("worklogs_node",
   slots     = c(children = "list", fold_status = "character"),
@@ -190,7 +196,7 @@ mk_worklogs_node <- function(wkls, split_dfs, config) {
   new("worklogs_node", children = raw_worklogs_node, fold_status = "unfolded")
 }
 
-#' @name worklogs
+#' @rdname worklogs
 #' @export
 setMethod("worklogs",
   signature  = "list",
@@ -223,7 +229,7 @@ mk_worklogs_leafs_split_no <- function(wkls, config) {
   worklogs_leaf <- new("worklogs_leaf", worklogs = wkls, config = config)
 }
 
-#' @name worklogs
+#' @rdname worklogs
 #' @export
 setMethod("worklogs",
   signature  = "data.frame",
@@ -347,7 +353,7 @@ setMethod("format_worklogs",
 
 #' Display a `worklogs` Object
 #'
-#' Prints a representation of the worklogs.
+#' @param object A `worklogs` object.
 #'
 #' @importMethodsFrom methods show
 #' @export
@@ -472,6 +478,8 @@ fold_impl <- function(wkls, path) {
   update_child(wkls, path, character(0L), fold_this)
 }
 
+#' @rdname fold
+#' @export
 setMethod("fold",
   signature  = "worklogs",
   definition = fold_impl
@@ -515,7 +523,8 @@ fold_children_impl <- function(wkls, path) {
   update_child(wkls, path, character(0L), fold_these_children)
 }
 
-
+#' @rdname fold
+#' @export
 setMethod("fold_children",
   signature  = "worklogs",
   definition = fold_children_impl
@@ -579,16 +588,18 @@ setMethod("extract_worklogs_impl",
   definition = extract_worklogs_impl_leaf
 )
 
-setGeneric("extract_worklogs",
-  def       = function(wkls, path) standardGeneric("extract_worklogs"),
-  signature = "wkls"
-)
-
 #' Extract a Subtree From a Worklogs Tree
 #'
 #' @param wkls A `worklogs` object.
 #' @param path A character vector such that each element in vector corresponds
 #'
+#' @export
+setGeneric("extract_worklogs",
+  def       = function(wkls, path) standardGeneric("extract_worklogs"),
+  signature = "wkls"
+)
+
+#' @rdname extract_worklogs
 #' @export
 setMethod("extract_worklogs",
   signature  = "worklogs",
@@ -1032,6 +1043,8 @@ setMethod("update_worklogs",
   definition = update_worklogs_leaf
 )
 
+#' Filter worklogs by timestamp
+#'
 #' TODO
 #'
 #' @param wkls A `worklogs` object.
@@ -1039,8 +1052,11 @@ setMethod("update_worklogs",
 #' @param before_datetime A length-1 datetime.
 #' @param after_datetime A length-1 datetime.
 #'
-#' @export
 #' @name filter_time
+NULL
+
+#' @export
+#' @rdname filter_time
 setGeneric("filter_time_before",
   def       = function(wkls, datetime) standardGeneric("filter_time_before"),
   signature = "wkls"
