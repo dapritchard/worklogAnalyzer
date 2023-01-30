@@ -38,3 +38,26 @@ partition_by_intervals <- function(worklogs,
 
 #   }
 # }
+
+calc_breakpoints_before <- function(time_before, time_after, period) {
+  if (time_before >= time_after) {
+    return(time_after)
+  }
+  interval_val <- interval(time_before, time_after)
+  n_periods <- ceiling(interval_val / period)
+  sort(time_after - ((0 : n_periods) * period))
+}
+
+calc_breakpoints_after <- function(time_before, time_after, period) {
+  if (time_before > time_after) {
+    return(time_before)
+  }
+  interval_val <- interval(time_before, time_after)
+  n_periods_orig <- interval_val / period
+  n_periods <- `if`(
+    floor(n_periods_orig) == n_periods_orig,
+    n_periods_orig + 1,
+    ceiling(n_periods_orig)
+  )
+  time_before + ((0 : n_periods) * period)
+}
