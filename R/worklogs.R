@@ -648,6 +648,7 @@ setMethod("collect_worklogs",
   definition = collect_worklogs_leaf
 )
 
+#' @export
 as_tibble.worklogs_node <- function(x, ...) {
   collected_worklogs_list <- collect_worklogs_node(x, "<top level>")
   collected_worklogs <- bind_rows(collected_worklogs_list)
@@ -655,6 +656,7 @@ as_tibble.worklogs_node <- function(x, ...) {
   as_tibble(collected_worklogs, ...)
 }
 
+#' @export
 as_tibble.worklogs_leaf <- function(x, ...) {
   as_tibble(x@worklogs, ...)
 }

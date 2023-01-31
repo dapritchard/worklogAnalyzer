@@ -15,7 +15,8 @@ partition_by_intervals <- function(worklogs_df,
   breakpoints <- calc_breakpoints(
     worklogs_start,
     start_time,
-    period, directionsi
+    period,
+    directions
   )
   breakpoint_pairs <- tibble(
     before_time = head(breakpoints, -1),
@@ -31,7 +32,7 @@ calc_breakpoints <- function(worklogs_start,
   breakpoints_before <- `if`(
     directions %in% c("before", "both"),
     calc_breakpoints_before(min(worklogs_start), start_time, period),
-    parse_date_time(character(0L))
+    lubridate::parse_date_time(character(0L))
   )
   breakpoints_after <- `if`(
     directions %in% c("after", "both"),
@@ -43,7 +44,7 @@ calc_breakpoints <- function(worklogs_start,
 
 calc_breakpoints_before <- function(min_time, start_time, period) {
   if (min_time >= start_time) {
-    return(parse_date_time(character(0L)))
+    return(lubridate::parse_date_time(character(0L))) # TODO: is there a better way to do this?
   }
   interval_val <- interval(min_time, start_time)
   n_periods <- ceiling(interval_val / period)
@@ -63,10 +64,3 @@ calc_breakpoints_after <- function(start_time, time_after, period) {
   )
   start_time + ((0 : n_periods) * period)
 }
-
-calc_breakpoints(
-  parse_date_time(c("20220101", "20220103", "20220105"), "ymd"),
-  parse_date_time("2022010406", "ymdh"),
-  hours(8),
-  "both"
-)
