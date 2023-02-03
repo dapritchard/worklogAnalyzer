@@ -22,7 +22,8 @@ partition_by_intervals <- function(worklogs_df,
     before_time = head(breakpoints, -1),
     after_time  = breakpoints[-1]
   )
-  pmap(breakpoint_pairs, filter_worklogs_by_time)
+  partition_df_list <- pmap(breakpoint_pairs, filter_worklogs_by_time)
+  tibble(breakpoint_pairs, partition_df = partition_df_list)
 }
 
 calc_breakpoints <- function(worklogs_start,
