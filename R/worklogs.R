@@ -648,6 +648,13 @@ setMethod("collect_worklogs",
   definition = collect_worklogs_leaf
 )
 
+#' Collect a Worklogs Node Into a Tibble
+#'
+#' Collects all of the worklogs in a worklogs tree into a tibble.
+#'
+#' @param x A `worklogs_node`.
+#' @param ... Arguments that are passed on to `as_tibble`.
+#'
 #' @export
 as_tibble.worklogs_node <- function(x, ...) {
   collected_worklogs_list <- collect_worklogs_node(x, "<top level>")
@@ -656,6 +663,12 @@ as_tibble.worklogs_node <- function(x, ...) {
   as_tibble(collected_worklogs, ...)
 }
 
+#' Collect a Worklogs Node Into a Tibble
+#'
+#' Extract the worklogs from a `worklogs_leaf` and apply `as_tibble` to it.
+#'
+#' @inheritParams as_tibble.worklogs_node
+#'
 #' @export
 as_tibble.worklogs_leaf <- function(x, ...) {
   as_tibble(x@worklogs, ...)
