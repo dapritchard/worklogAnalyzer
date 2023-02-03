@@ -1,5 +1,5 @@
 aggregate_by_period <- function(worklogs,
-                                config, # TODO: find a way to extract this
+                                config, # TODO: find a way to extract this from the worklogs when collecting into a df
                                 tags_mapping,
                                 start_time,
                                 period,
@@ -8,17 +8,50 @@ aggregate_by_period <- function(worklogs,
   worklogs_df <- as_tibble(worklogs)
   maybe_tags <- maybe_translate_tags(worklogs_df, config, tags_mapping, default)
   if (maybe_tags$status == "failure") {
-    stop(maybe_tags$message)
+    msg <- c(
+      "Not all worklogs entry could be mapped to a tags category\n",
+      maybe_tags$message
+    )
+    stop(msg, call. = FALSE)
   }
   worklogs_df$.mapped_tags <- maybe_tags$mapped_tags
-  partitions_list <- partition_by_intervals(
+  partitions_collection <- partition_by_intervals(
     worklogs_df,
     start_time,
     period,
     directions,
     config
   )
-  partitions_list
+  tag_categories <- `if`(
+    is.na(NA_character_),
+    names(tags_mapping),
+    c(names(tags_mapping), default)
+  )
+  results <- set_names(
+    map(partitions_collection$partition_df, summarize_period, config, tag_categories),
+    partitions_collection$before_time
+  )
+  as_tibble(c(categories = list(tag_categories), results))
+}
+
+
+summarize_period <- function(worklogs_df,
+                             config,
+                             tag_categories) {
+  sum_category <- function(tag) {
+    sum(durations[worklogs_df$.mapped_tags == tag])
+  }
+  format_duration <- function(duration) {
+    duration_dbl <- as.double(duration)
+    sprintf(
+      "%s:%02d",
+      duration_dbl %% 86400 %/% 3600,
+      round(duration_dbl %% 3600 / 60)
+    )
+  }
+  durations <- worklogs_df[[config@labels@duration]]
+  summed_categories <- map_dbl(tag_categories, sum_category)
+  map_chr(summed_categories, format_duration)
 }
 
 maybe_translate_tags <- function(worklogs_df, config, tags_mapping, default) {
