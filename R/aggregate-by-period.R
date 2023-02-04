@@ -1,15 +1,40 @@
-aggregate_by_period <- function(worklogs,
-                                config, # TODO: find a way to extract this from the worklogs when collecting into a df
+#' Aggregate Effort Totals Across Tags and Time Periods
+#'
+#' @param wkls A `worklogs` object.
+#' @param config A `worklogs_config` object.
+#' @param tags_mapping A named character vector providing a mapping between
+#'   existing worklog entries tags and new categories. In more detail, if a
+#'   given worklog entry with a corresponding set of tags has a tag in one of
+#'   the elements of `tags_mapping`, then the worklog entry is mapped to a
+#'   category with the name given by the corresponding entry in the
+#'   `tags_mapping` names. In the event that there are tags corresponding to a
+#'   given worklogs entry that are elements of multiple entries in
+#'   `tags_mapping` then the earlier entry in `tags_mapping` is given
+#'   precedence.
+#' @param start_time A datetime from which the periods are counted either
+#'   forward, backwards, or in both directions, as specified by `directions`.
+#' @param period A duration specifying the duration of the time periods.
+#' @param directions Either `"before"`, `"after"`, or `"both"`.
+#' @param default Either `NA_character_` or a string. In the case that
+#'   `NA_character_` is provided, then in the event that the tags associated
+#'   with a given worklogs entry don't have a match in `tags_mapping` then an
+#'   error is thrown, whereas if a string is provided then the tags associated
+#'   with a given worklogs entry don't have a match in `tags_mapping` then the
+#'   worklogs entry is mapped to the value of `default`.
+#'
+#' @export
+aggregate_by_period <- function(wkls,
+                                config, # TODO: find a way to extract this from the wkls when collecting into a df
                                 tags_mapping,
                                 start_time,
                                 period,
                                 directions,
                                 default = NA_character_) {
-  worklogs_df <- as_tibble(worklogs)
+  worklogs_df <- as_tibble(wkls)
   maybe_tags <- maybe_translate_tags(worklogs_df, config, tags_mapping, default)
   if (maybe_tags$status == "failure") {
     msg <- c(
-      "Not all worklogs entry could be mapped to a tags category\n",
+      "Not all wkls entry could be mapped to a tags category\n",
       maybe_tags$message
     )
     stop(msg, call. = FALSE)

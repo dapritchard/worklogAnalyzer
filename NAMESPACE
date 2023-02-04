@@ -2,6 +2,7 @@
 
 S3method(as_tibble,worklogs_leaf)
 S3method(as_tibble,worklogs_node)
+export(aggregate_by_period)
 export(effort_summary)
 export(extract_worklogs)
 export(filter_last_week)
