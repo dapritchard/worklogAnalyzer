@@ -47,7 +47,7 @@ calc_breakpoints_before <- function(min_time, start_time, period) {
   if (min_time >= start_time) {
     return(lubridate::parse_date_time(character(0L))) # TODO: is there a better way to do this?
   }
-  interval_val <- interval(min_time, start_time)
+  interval_val <- lubridate::interval(min_time, start_time)
   n_periods <- ceiling(interval_val / period)
   sort(start_time - (seq(1, n_periods, 1) * period))
 }
@@ -56,7 +56,7 @@ calc_breakpoints_after <- function(start_time, time_after, period) {
   if (start_time > time_after) {
     return(start_time)
   }
-  interval_val <- interval(start_time, time_after)
+  interval_val <- lubridate::interval(start_time, time_after)
   n_periods_orig <- interval_val / period
   n_periods <- `if`(
     floor(n_periods_orig) == n_periods_orig,
