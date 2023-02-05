@@ -309,7 +309,7 @@ format_worklogs_node_unfolded <- function(wkls, padding) {
     glyphs <- `if`(
       n == 0L,
       character(0L),
-      # c(rep("├── ", n - 1L), "└── ")
+      # A unicode version of c(rep("|-- ", n - 1L), "`-- ")
       c(rep("\u251C\u2500\u2500 ", n - 1L), "\u2514\u2500\u2500 ")
     )
     folded_info <- map_chr(children, mk_folded_info)
@@ -320,7 +320,7 @@ format_worklogs_node_unfolded <- function(wkls, padding) {
     new_padding <- `if`(
       n == 0L,
       character(0L),
-      # c(rep("│  ", n - 1L), "   ")
+      # A unicode version of c(rep("|  ", n - 1L), "   ")
       c(rep("\u2502  ", n - 1L), "   ")
     )
     sprintf("%s%s", padding, new_padding)
@@ -924,7 +924,7 @@ format_effort_node <- function(effort, padding, depth, total_effort, config) {
     glyphs <- `if`(
       n == 0L,
       character(0L),
-      # c(rep("├── ", n - 1L), "└── ")
+      # A unicode version of c(rep("|-- ", n - 1L), "`-- ")
       c(rep("\u251C\u2500\u2500 ", n - 1L), "\u2514\u2500\u2500 ")
     )
     folded_info <- pad_entries_only(map_chr(children, mk_folded_info))
@@ -939,7 +939,7 @@ format_effort_node <- function(effort, padding, depth, total_effort, config) {
     new_padding <- `if`(
       n == 0L,
       character(0L),
-      # c(rep("│  ", n - 1L), "   ")
+      # A unicode version of c(rep("|  ", n - 1L), "   ")
       c(rep("\u2502  ", n - 1L), "   ")
     )
     sprintf("%s%s", padding, new_padding)
@@ -1018,7 +1018,8 @@ effort_summary <- function(wkls, show_all = FALSE, effort_style = "percent") {
   efforts <- format_effort_tree(effort_descr_df, "", 0L)
   tasks <- pad_right(map_chr(tree_components, "task"))
   effort_summary <- sprintf("%s  %s", tasks, efforts)
-  effort_column_header_components <- c("Effort proportion", "─────────────────")
+  # A unicode version of c("Effort proportion", strrep("-", 17L))
+  effort_column_header_components <- c("Effort proportion", strrep("\u2500", 17L))
   effort_column_header_padding <- strrep(" ", max(nchar(effort_summary)) - 18L)
   effort_column_header <- paste0(
     c(" ", "."),
@@ -1289,7 +1290,7 @@ format_effort_tree <- function(effort_descr_df, padding, depth) {
     new_padding <- `if`(
       n == 0L,
       character(0L),
-      # c(rep("│  ", n - 1L), "   ")
+      # A unicode version of c(rep("|  ", n - 1L), "   ")
       c(rep("\u2502  ", n - 1L), "   ")
     )
     sprintf("%s%s%s", padding, new_padding, curr_effort_padding)
@@ -1300,16 +1301,16 @@ format_effort_tree <- function(effort_descr_df, padding, depth) {
       glyphs <- character(0L)
     }
     else if (n == 1L) {
-      # glyphs <- "─── "
+      # A unicode version of "--- "
       glyphs <- "\u2500\u2500\u2500 "
     }
     else {
       glyphs <- c(
-        # "┌── ",
+        # A unicode version of ".-- ",
         "\u250c\u2500\u2500 ",
-        # rep("├── ", n - 2L),
+        # A unicode version of rep("|-- ", n - 2L),
         rep("\u251c\u2500\u2500 ", n - 2L),
-        # "└── "
+        # A unicode version of "`-- "
         "\u2514\u2500\u2500 "
       )
     }
