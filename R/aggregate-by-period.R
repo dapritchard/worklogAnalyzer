@@ -59,7 +59,6 @@ aggregate_by_period <- function(wkls,
   as_tibble(c(categories = list(tag_categories), results))
 }
 
-
 summarize_period <- function(worklogs_df,
                              config,
                              tag_categories) {
@@ -68,13 +67,25 @@ summarize_period <- function(worklogs_df,
   }
   format_duration <- function(duration) {
     duration_dbl <- as.double(duration)
-    sprintf(
-      "%s:%02d",
-      duration_dbl %% 86400 %/% 3600,
-      round(duration_dbl %% 3600 / 60)
-    )
+    if (units == "secs") {
+      sprintf(
+        "%d:%02d",
+        duration_dbl %/% 3600,
+        round(duration_dbl %% 3600)
+      )
+    } else if (units == "mins") {
+      sprintf(
+        "%d:%02d",
+        duration_dbl %/% 60,
+        round(duration_dbl %% 60)
+      )
+    }
+    else {
+      stop("internal error: no formating for ", units, " units")
+    }
   }
   durations <- worklogs_df[[config@labels@duration]]
+  units <- attr(durations, "units", TRUE)
   summed_categories <- map_dbl(tag_categories, sum_category)
   map_chr(summed_categories, format_duration)
 }
