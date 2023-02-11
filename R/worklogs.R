@@ -1239,6 +1239,112 @@ mk_effort_info_df <- function(tree_components) {
 }
 
 
+# filter worklogs by regex -----------------------------------------------------
+
+# #' @rdname prune_empty_children
+# #' @export
+# setGeneric("prune_empty_children",
+#   def       = function(wkls) standardGeneric("prune_empty_children"),
+#   signature = "wkls"
+# )
+
+# prune_empty_children_node <- function(wkls) {
+
+# }
+
+#' @rdname filter_time
+#' @export
+setMethod("prune_empty_children",
+  signature  = "worklogs_node",
+  definition = prune_empty_children_node
+)
+
+#' @rdname filter_time
+#' @export
+setGeneric("filter_name_keep",
+  def       = function(wkls, pattern, type, exclude, prune_empty, ...) standardGeneric("filter_name_keep"),
+  signature = "wkls"
+)
+
+# if "node"
+#   for a node: then matching a node includes everything inside it
+#               otherwise recurse into the node and perform filtering
+#   for a leaf: always keep
+#
+# if "both"
+#   for a node: then matching a node includes everything inside it
+#               otherwise recurse into the node and perform filtering
+#   for a leaf: keep if a match, otherwise discard
+#
+# if "leaf"
+#   for a node: always keep
+#   for a leaf: keep if a match, otherwise discard
+
+filter_name_keep_node <- function(wkls,
+                                  pattern = character(0L),
+                                  type = "leafs",
+                                  exclude = character(0L)
+                                  prune_empty = TRUE,
+                                  ...) {
+  filter_name_keep_node_impl <- function() {
+    if (type == "leaf") {
+      unfiltered_lgl <- map_lgl(children, is, class2 = "worklogs_node")
+    } else if (type == "nodes") {
+      unfiltered_lgl <- map_lgl(children, is, class2 = "worklogs_leaf")
+    } else {
+      unfiltered_lgl <- rep(FALSE, length(children))
+    }
+    init_false <- rep(FALSE, length(children))
+    include_lgls <- map(grep, pattern = pattern, ...)
+    include_lgl <- reduce(include_lgls, `|`, .init = init_false)
+    exclude_lgls <- map(grep, pattern = exclude, ...)
+    exclude_lgl <- reduce(exclude_lgls, `|`, .init = init_false)
+    children[unfiltered_lgl & include_lgls & (! exclude_lgls)]
+  }
+  stopifnot(
+    is(wkls, "worklogs")
+    is_chr_nomiss(keep),
+    check_arg_type(type),
+    is_chr_nomiss(exclude),
+    is_bool(prune_empty)
+  )
+  children <- wkls@children
+  children <- `if`(
+    check_filter_name_keep_node(type),
+    filter_name_keep_node_impl(wkls@children),
+    map(wkls@children, filter_name_keep)
+  )
+  new_children <- filter_non_null(maybe_children)
+  `if`(
+    prune_empty,
+    `if`(length(new_children) == 0L, NULL, new_children),
+    new_children
+  )
+}
+
+#' @rdname filter_time
+#' @export
+setMethod("filter_name_keep",
+  signature  = "worklogs_node",
+  definition = filter_time_after_impl
+)
+
+filter_non_null <- function(x) {
+  stopifnot(is.list(x))
+  discard(x, is.null)
+}
+
+check_arg_type <- function(x) {
+  (is_string(type)
+    & type %in% c("leafs", "nodes", "both")
+  )
+}
+
+check_filter_name_keep_node <- function(type) {
+  type %in% c("nodes", "both")
+}
+
+
 # Formatting helper routines ---------------------------------------------------
 
 mk_effort_descr_df <- function(effort_info_df, config) {
