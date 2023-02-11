@@ -1252,10 +1252,10 @@ mk_effort_info_df <- function(tree_components) {
 
 # }
 
-setMethod("prune_empty_children",
-  signature  = "worklogs_node",
-  definition = prune_empty_children_node
-)
+# setMethod("prune_empty_children",
+#   signature  = "worklogs_node",
+#   definition = prune_empty_children_node
+# )
 
 #' @rdname filter_name
 #' @export
@@ -1286,7 +1286,7 @@ check_empty <- function(wkls) {
 filter_name_keep_node <- function(wkls,
                                   pattern = character(0L),
                                   type = "leafs",
-                                  exclude = character(0L)
+                                  exclude = character(0L),
                                   prune_empty = TRUE,
                                   ...) {
   calc_keep_lgl <- function(children) {
@@ -1309,7 +1309,7 @@ filter_name_keep_node <- function(wkls,
       `if`(prune_empty && check_empty(wkls), NULL, wkls)
     }
     `if`(
-      is_keep
+      is_keep,
       child,
       # TODO: make S4 generic and methods
       `if`(
@@ -1322,7 +1322,7 @@ filter_name_keep_node <- function(wkls,
     )
   }
   stopifnot(
-    is(wkls, "worklogs")
+    is(wkls, "worklogs"),
     is_chr_nomiss(keep),
     check_arg_type(type),
     is_chr_nomiss(exclude),
@@ -1340,6 +1340,31 @@ check_arg_type <- function(x) {
     & type %in% c("leafs", "nodes", "both")
   )
 }
+
+#' @rdname filter_name
+#' @export
+setMethod("filter_name_keep",
+  signature  = "worklogs_node",
+  definition = filter_name_keep_node
+)
+
+# TODO: this doesn't really make sense. Maybe we should attach the leaf name to
+# the leaf so we can know what its name is without having the parent
+filter_name_keep_leaf <- function(wkls,
+                                  pattern = character(0L),
+                                  type = "leafs",
+                                  exclude = character(0L)
+                                  prune_empty = TRUE,
+                                  ...) {
+  wkls
+}
+
+#' @rdname filter_name
+#' @export
+setMethod("filter_name_keep",
+  signature  = "worklogs_leaf",
+  definition = filter_name_keep_leaf
+)
 
 
 # Formatting helper routines ---------------------------------------------------
