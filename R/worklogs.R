@@ -1333,12 +1333,6 @@ filter_name_keep_node <- function(wkls,
   wkls
 }
 
-check_arg_type <- function(x) {
-  (is_string(x)
-    & (x %in% c("leafs", "nodes", "both"))
-  )
-}
-
 #' @rdname filter_name
 #' @export
 setMethod("filter_name_keep",
@@ -1346,15 +1340,13 @@ setMethod("filter_name_keep",
   definition = filter_name_keep_node
 )
 
-# TODO: this doesn't really make sense. Maybe we should attach the leaf name to
-# the leaf so we can know what its name is without having the parent
 filter_name_keep_leaf <- function(wkls,
                                   pattern = character(0L),
                                   type = "leafs",
                                   exclude = character(0L),
                                   prune_empty = TRUE,
                                   ...) {
-  wkls
+  stop("`filter_name_keep` is only supported for `worklog_node`s")
 }
 
 #' @rdname filter_name
@@ -1363,6 +1355,13 @@ setMethod("filter_name_keep",
   signature  = "worklogs_leaf",
   definition = filter_name_keep_leaf
 )
+
+# TODO: move this to a better place
+check_arg_type <- function(x) {
+  (is_string(x)
+    & (x %in% c("leafs", "nodes", "both"))
+  )
+}
 
 
 # Formatting helper routines ---------------------------------------------------
