@@ -1402,22 +1402,6 @@ setMethod("filter_name_keep",
   definition = filter_name_keep_node
 )
 
-filter_name_keep_leaf <- function(wkls,
-                                  pattern = character(0L),
-                                  type = "leafs",
-                                  exclude = character(0L),
-                                  prune_empty = TRUE,
-                                  ...) {
-  stop("`filter_name_keep` is only supported for `worklog_node`s")
-}
-
-#' @rdname filter_name
-#' @export
-setMethod("filter_name_keep",
-  signature  = "worklogs_leaf",
-  definition = filter_name_keep_leaf
-)
-
 # TODO: move this to a better place
 check_arg_type <- function(x) {
   (is_string(x)
