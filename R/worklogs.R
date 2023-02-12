@@ -1265,17 +1265,17 @@ setGeneric("filter_name_keep",
 )
 
 # if "nodes"
-#   for a node: then matching a node includes everything inside it
+#   for a node: when matching a node includes everything inside it
 #               otherwise recurse into the node and perform filtering
 #   for a leaf: always keep
 #
 # if "both"
-#   for a node: then matching a node includes everything inside it
+#   for a node: when matching a node includes everything inside it
 #               otherwise recurse into the node and perform filtering
 #   for a leaf: keep if a match, otherwise discard
 #
 # if "leaf"
-#   for a node: always keep
+#   for a node: recurse into the node and perform filtering
 #   for a leaf: keep if a match, otherwise discard
 
 # TODO: make into a method
@@ -1298,46 +1298,56 @@ filter_name_keep_node <- function(wkls,
       always_keep_lgl <- rep(FALSE, length(children))
     }
     init_false <- rep(FALSE, length(children))
-    include_lgls <- map(grep, pattern = pattern, ...)
+    include_lgls <- map(pattern, grepl, x = names(children), ...)
     include_lgl <- reduce(include_lgls, `|`, .init = init_false)
-    exclude_lgls <- map(grep, pattern = exclude, ...)
+    exclude_lgls <- map(exclude, grepl, x = names(children), ...)
     exclude_lgl <- reduce(exclude_lgls, `|`, .init = init_false)
-    unfiltered_lgl & include_lgls & (! exclude_lgls)
+    tibble(
+      child          = children,
+      is_always_keep = always_keep_lgl,
+      is_match       = include_lgl & (! exclude_lgl)
+    )
   }
-  process_child <- function(child, is_keep) {
+  process_child <- function(child, is_always_keep, is_match) {
     conditionally_convert_if_empty <- function(wkls) {
       `if`(prune_empty && check_empty(wkls), NULL, wkls)
     }
-    `if`(
-      is_keep,
-      child,
-      # TODO: make S4 generic and methods
-      `if`(
-        is(child, "worklogs_node"),
+    # TODO: make S4 generic and methods
+    if (is(child, "worklogs_node")) {
+      new_child <- `if`(
+        is_always_keep,
         { new_child <- filter_name_keep(child, pattern, type, exclude, prune_empty)
           conditionally_convert_if_empty(new_child)
         },
-        NULL
+        `if`(is_match, child, NULL)
       )
-    )
+    }
+    else {
+      new_child <- `if`(
+        is_always_keep,
+        child,
+        `if`(is_match, child, NULL)
+      )
+    }
+    new_child
   }
   stopifnot(
     is(wkls, "worklogs"),
-    is_chr_nomiss(keep),
+    is_chr_nomiss(pattern),
     check_arg_type(type),
     is_chr_nomiss(exclude),
     is_bool(prune_empty)
   )
   children <- wkls@children
   keep_lgl <- calc_keep_lgl(children)
-  maybe_children <- map(children, process_child)
+  maybe_children <- pmap(keep_lgl, process_child)
   wkls@children <- compact(maybe_children)
   wkls
 }
 
 check_arg_type <- function(x) {
-  (is_string(type)
-    & type %in% c("leafs", "nodes", "both")
+  (is_string(x)
+    & x %in% c("leafs", "nodes", "both")
   )
 }
 
@@ -1353,7 +1363,7 @@ setMethod("filter_name_keep",
 filter_name_keep_leaf <- function(wkls,
                                   pattern = character(0L),
                                   type = "leafs",
-                                  exclude = character(0L)
+                                  exclude = character(0L),
                                   prune_empty = TRUE,
                                   ...) {
   wkls
