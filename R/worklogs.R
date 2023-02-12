@@ -1241,21 +1241,28 @@ mk_effort_info_df <- function(tree_components) {
 
 # filter worklogs by regex -----------------------------------------------------
 
-# #' @rdname prune_empty_children
-# #' @export
-# setGeneric("prune_empty_children",
-#   def       = function(wkls) standardGeneric("prune_empty_children"),
-#   signature = "wkls"
-# )
+setGeneric("process_worklog_by_match",
+  def       = function(wkls, is_match, recurse_thunk) standardGeneric("process_worklog_by_match"),
+  signature = "wkls"
+)
 
-# prune_empty_children_node <- function(wkls) {
+process_worklog_by_match_node <- function(wkls, is_match, recurse_thunk) {
+  `if`(is_match, wkls, recurse_thunk())
+}
 
-# }
+setMethod("process_worklog_by_match",
+  signature  = "worklogs_node",
+  definition = process_worklog_by_match_node
+)
 
-# setMethod("prune_empty_children",
-#   signature  = "worklogs_node",
-#   definition = prune_empty_children_node
-# )
+process_worklog_by_match_leaf <- function(wkls, is_match, recurse_thunk) {
+  `if`(is_match, wkls, NULL)
+}
+
+setMethod("process_worklog_by_match",
+  signature  = "worklogs_leaf",
+  definition = process_worklog_by_match_leaf
+)
 
 #' @rdname filter_name
 #' @export
@@ -1306,27 +1313,11 @@ filter_name_keep_node <- function(wkls,
     type_mask & include_lgl & (! exclude_lgl)
   }
   process_child <- function(child, is_match) {
-    conditionally_convert_if_empty <- function(wkls) {
-      `if`(prune_empty && check_worklogs_empty(wkls), NULL, wkls)
+    recurse_thunk <- function() {
+      new_child <- filter_name_keep(child, pattern, type, exclude, prune_empty, ...)
+      `if`(prune_empty && check_worklogs_empty(new_child), NULL, new_child)
     }
-    # TODO: make S4 generic and methods
-    if (is(child, "worklogs_node")) {
-      new_child <- `if`(
-        is_match,
-        child,
-        { new_child <- filter_name_keep(child, pattern, type, exclude, prune_empty)
-          conditionally_convert_if_empty(new_child)
-        }
-      )
-    }
-    else {
-      new_child <- `if`(
-        is_match,
-        child,
-        NULL
-      )
-    }
-    new_child
+    process_worklog_by_match(child, is_match, recurse_thunk)
   }
   stopifnot(
     is(wkls, "worklogs"),
