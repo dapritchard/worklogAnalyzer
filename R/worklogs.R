@@ -75,10 +75,10 @@ setClass("worklogs_config",
 #'
 #' @export
 worklogs_config <- function(description_label,
-                            start_label,
-                            end_label,
-                            duration_label,
-                            tags_label) {
+                            start_label = NA_character_,
+                            end_label = NA_character_,
+                            duration_label = NA_character_,
+                            tags_label = NA_character_) {
   # TODO: check the following:
   # - at least 2 out of 3 of start_label, end_label, and end_format
   stopifnot(
