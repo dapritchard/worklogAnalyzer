@@ -50,8 +50,96 @@
   </div>
 </nav><div class="container template-home">
 <div class="row">
-  <main id="main" class="col-md-9">
-What the package does (one paragraph).
+  <main id="main" class="col-md-9"><div class="section level1">
+<div class="page-header"><h1 id="workloganalyzer">worklogAnalyzer<a class="anchor" aria-label="anchor" href="#workloganalyzer"></a>
+</h1></div>
+<p>Analyze your worklog history.</p>
+<div class="section level2">
+<h2 id="definition-of-a-worklog-timesheet">Definition of a worklog (timesheet)<a class="anchor" aria-label="anchor" href="#definition-of-a-worklog-timesheet"></a>
+</h2>
+<p>The terms <em>worklog</em> and <em>timesheet</em> appear to be used interchangeably in common usage to refer to a record of a contiguous block of time in which a single task was performed; this project uses the term worklog throughout.</p>
+</div>
+<div class="section level2">
+<h2 id="representing-worklogs">Representing worklogs<a class="anchor" aria-label="anchor" href="#representing-worklogs"></a>
+</h2>
+</div>
+<div class="section level2">
+<h2 id="worklog-hierarchy">Worklog hierarchy<a class="anchor" aria-label="anchor" href="#worklog-hierarchy"></a>
+</h2>
+<p>This project views worklogs as being naturally represented as a hierarchical structure. For example, you can imagine your worklogs history having multiple projects, where each project has its own tasks, and those tasks possibly having their own subtasks, and so on. Of course, if you don’t want to represent your worklogs in a hierarchical structure then you can put all of your worklogs in a single level.</p>
+<p>Representing worklogs in a hierarchical manner provides several nice features. It may be easier to understand the structure of your worklogs by displaying the relationship between the worklogs in this manner. You can easily focus on certain subsets of your worklogs history by selecting a subtree of the history. And you can easily zoom out and zoom in on the level of detail that you want to view your worklogs in by considering any worklogs in a given subtree to all belong to the same level in the hierarchy or vice versa.</p>
+</div>
+<div class="section level2">
+<h2 id="worklog-tags">Worklog tags<a class="anchor" aria-label="anchor" href="#worklog-tags"></a>
+</h2>
+<p>Sometimes relationships between worklogs cut across the hierarchical structure that you’ve chosen for your worklogs. For example, suppose you want to add up the amount of time that you’ve spent doing code reviews across your various projects. For this purpose the project has the concept of worklogs being tagged, meaning that each worklog has 0 or identifiers that can be used to filter on or categorize a worklog.</p>
+</div>
+<div class="section level2">
+<h2 id="a-basic-example">A basic example<a class="anchor" aria-label="anchor" href="#a-basic-example"></a>
+</h2>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://lubridate.tidyverse.org" class="external-link">lubridate</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tibble.tidyverse.org/" class="external-link">tibble</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dapritchard.github.io/worklogAnalyzer/">worklogAnalyzer</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">parse_ymdhm</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://lubridate.tidyverse.org/reference/parse_date_time.html" class="external-link">parse_date_time</a></span><span class="op">(</span><span class="va">x</span>, <span class="st">"Ymd HM"</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="va">install_r</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
+<span>  description <span class="op">=</span> <span class="st">"Install latest version of R"</span>,</span>
+<span>  start       <span class="op">=</span> <span class="fu">parse_ymdhm</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2023-02-14 20:12"</span>, <span class="st">"2023-02-15 18:17"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  end         <span class="op">=</span> <span class="fu">parse_ymdhm</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"2023-02-14 20:30"</span>, <span class="st">"2023-02-15 18:33"</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  duration    <span class="op">=</span> <span class="va">end</span> <span class="op">-</span> <span class="va">start</span> </span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">dev_r_packages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
+<span>  description <span class="op">=</span> <span class="st">"Install devtools and testthat"</span>,</span>
+<span>  start       <span class="op">=</span> <span class="fu">parse_ymdhm</span><span class="op">(</span><span class="st">"2023-02-15 17:55"</span><span class="op">)</span>,</span>
+<span>  end         <span class="op">=</span> <span class="fu">parse_ymdhm</span><span class="op">(</span><span class="st">"2023-02-15 18:02"</span><span class="op">)</span>,</span>
+<span>  duration    <span class="op">=</span> <span class="va">end</span> <span class="op">-</span> <span class="va">start</span> </span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">create_package</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span>
+<span>  description <span class="op">=</span> <span class="st">"Run 'create_package' and ''use_testthat'"</span>,</span>
+<span>  start       <span class="op">=</span> <span class="fu">parse_ymdhm</span><span class="op">(</span><span class="st">"2023-02-15 18:02"</span><span class="op">)</span>,</span>
+<span>  end         <span class="op">=</span> <span class="fu">parse_ymdhm</span><span class="op">(</span><span class="st">"2023-02-15 18:09"</span><span class="op">)</span>,</span>
+<span>  duration    <span class="op">=</span> <span class="va">end</span> <span class="op">-</span> <span class="va">start</span> </span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">source_worklog</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>  <span class="st">"Setup development env"</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    <span class="st">"Install newest R"</span>             <span class="op">=</span> <span class="va">install_r</span>,</span>
+<span>    <span class="st">"Install development packages"</span> <span class="op">=</span> <span class="va">dev_r_packages</span></span>
+<span>  <span class="op">)</span>,</span>
+<span>  <span class="st">"Create R package skeleton"</span> <span class="op">=</span> <span class="va">create_package</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">config</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/worklogs_config.html">worklogs_config</a></span><span class="op">(</span></span>
+<span>  description_label <span class="op">=</span> <span class="st">"description"</span>,</span>
+<span>  start_label       <span class="op">=</span> <span class="st">"start"</span>,</span>
+<span>  end_label         <span class="op">=</span> <span class="st">"end"</span>,</span>
+<span>  duration          <span class="op">=</span> <span class="st">"duration"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">wkls</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/worklogs.html">worklogs</a></span><span class="op">(</span><span class="va">source_worklog</span>, <span class="cn">FALSE</span>, <span class="va">config</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">wkls</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="do">## .</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="do">## ├── Setup development env</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="do">## │  ├── Install newest R</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="do">## │  └── Install development packages</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="do">## └── Create R package skeleton</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/effort_summary.html">effort_summary</a></span><span class="op">(</span><span class="va">wkls</span><span class="op">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="do">##                                      Effort proportion</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="do">## .                                    ─────────────────</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="do">## ├── Setup development env            ┌── 85%</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="do">## │  ├── Install newest R              │         ┌── 71%</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="do">## │  └── Install development packages  │         └── 15%</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="do">## └── Create R package skeleton        └── 15%</span></span></code></pre></div>
+</div>
+</div>
   </main><aside class="col-md-3"><div class="license">
 <h2 data-toc-skip>License</h2>
 <ul class="list-unstyled">
