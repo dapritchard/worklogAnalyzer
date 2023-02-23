@@ -832,6 +832,90 @@ setMethod("extract_worklogs",
 )
 
 
+# Remove `worklog` graph subtree------------------------------------------------
+
+setGeneric("remove_worklogs_impl",
+  def       = function(wkls, path, parents) standardGeneric("remove_worklogs_impl"),
+  signature = "wkls"
+)
+
+remove_worklogs_impl_node <- function(wkls, path, parents) {
+
+  # Update the appropriate child of `wkls`
+  remove_worklogs_impl <- function() {
+
+    # Extract children
+    children <- wkls@children
+
+    # Update `path` and `parents` information for upcoming call
+    stopifnot(length(path) >= 1L)
+    child_name <- path[1L]
+    new_path <- path[-1L]
+    new_parents <- c(parents, child_name)
+
+    # Remove the appropriate child
+    child <- chuck(children, child_name)
+    remove_worklogs_impl_node(child, new_path, new_parents)
+  }
+
+  `if`(
+    length(path) == 0L,
+    wkls,
+    remove_worklogs_impl()
+  )
+}
+
+setMethod("remove_worklogs_impl",
+  signature  = "worklogs_node",
+  definition = remove_worklogs_impl_node
+)
+
+remove_worklogs_impl_leaf <- function(wkls, path, parents) {
+  if (length(path) >= 1L) {
+    msg <- sprintf(
+      "%s\n%s%s\n%s",
+      "Can't get the child of a leaf node with the following parents:",
+      sprintf("    %s\n", path),
+      "The following children were asked for: ",
+      sprintf("    %s\n", path)
+    )
+    stop(msg)
+  }
+  wkls
+}
+
+setMethod("remove_worklogs_impl",
+  signature  = "worklogs_leaf",
+  definition = remove_worklogs_impl_leaf
+)
+
+#' Remove a Subtree From a Worklogs Tree
+#'
+#' @param wkls A `worklogs` object.
+#' @param path A character vector such that each element in vector corresponds
+#'
+#' @export
+setGeneric("remove_worklogs",
+  def       = function(wkls, path) standardGeneric("remove_worklogs"),
+  signature = "wkls"
+)
+
+#' @rdname remove_worklogs
+#' @export
+setMethod("remove_worklogs",
+  signature  = "worklogs_node",
+  definition = function(wkls, path) remove_worklogs_impl(wkls, path, "")
+)
+
+#' @rdname remove_worklogs
+#' @export
+setMethod("remove_worklogs",
+  signature  = "worklogs_leaf",
+  definition = function(wkls, path) remove_worklogs_impl(wkls, path, "")
+)
+
+
+
 # Collect worklogs (e.g. reassemble into a data frame) -------------------------
 
 setGeneric("collect_worklogs",
