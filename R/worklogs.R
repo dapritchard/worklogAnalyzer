@@ -133,8 +133,16 @@ setClass("worklogs_node",
 #' @rdname classes_worklogs_config
 #' @export
 setClass("worklogs_leaf",
-  slots     = c(worklogs = "data.frame", config = "worklogs_config"),
-  prototype = list(worklogs = data.frame(), config = new("worklogs_config"))
+  slots     = c(
+    worklogs = "data.frame",
+    name     = "character",
+    config   = "worklogs_config"
+  ),
+  prototype = list(
+    worklogs = data.frame(),
+    name     = "",
+    config   = new("worklogs_config")
+  )
 )
 
 #' @rdname classes_worklogs_config
