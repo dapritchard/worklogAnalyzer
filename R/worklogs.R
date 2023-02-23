@@ -244,6 +244,73 @@ setMethod("worklogs",
   definition = mk_worklogs_leafs
 )
 
+setGeneric("worklogs_impl",
+  def = function(wkls, split_dfs, name, config)
+    standardGeneric("worklogs_impl"),
+  signature = "wkls"
+)
+
+mk_worklogs_impl_node <- function(wkls, split_dfs, name, config) {
+  stopifnot(
+    is.list(wkls),
+    is_chr_nomiss_norepeat(names(wkls)),
+    is_bool(split_dfs),
+    is_string(name),
+    is(config, "worklogs_config")
+  )
+  raw_worklogs_node <- imap(
+    .x        = wkls,
+    .f        = worklogs_impl,
+    split_dfs = split_dfs,
+    name      = .y,
+    config    = config
+  )
+  new("worklogs_node", children = raw_worklogs_node, fold_status = "unfolded")
+}
+
+setMethod("worklogs_impl",
+  signature  = "list",
+  definition = mk_worklogs_impl_node
+)
+
+mk_worklogs_impl_leafs <- function(wkls, split_dfs, name, config) {
+  `if`(
+    split_dfs,
+    compact(mk_worklogs_impl_leafs_split_yes(wkls, name, config)),
+    mk_worklogs_impl_leafs_split_no(wkls, name, config)
+  )
+}
+
+mk_worklogs_impl_leafs_split_yes <- function(wkls, name, config) {
+  mk_child_leafs <- function() {
+    worklogs_leafs <- imap(
+      .x = raw_leafs,
+      .f = ~ new("worklogs_leaf", .x, .y, config)
+    )
+    new("worklogs_node", children = worklogs_leafs, fold_status = "unfolded")
+  }
+  stopifnot(is.data.frame(wkls), is_string(name), is(config, "worklogs_config"))
+  raw_leafs <- split(wkls, wkls[[config@labels@description]])  # TODO: helper function for wkls[[config@labels@description]]
+  `if`(
+    length(raw_leafs) == 0L,
+    NULL,
+    mk_child_leafs()
+  )
+}
+
+mk_worklogs_impl_leafs_split_no <- function(wkls, name, config) {
+  stopifnot(
+    is.data.frame(wkls),
+    length(unique(wkls[[config@labels@description]])) <= 1L  # TODO: helper function for wkls[[config@labels@description]]
+  )
+  worklogs_leaf <- new("worklogs_leaf", wkls, name, config)
+}
+
+setMethod("worklogs_impl",
+  signature  = "data.frame",
+  definition = mk_worklogs_impl_leafs
+)
+
 
 # `worklogs` `show` method -----------------------------------------------------
 
