@@ -124,7 +124,7 @@ setClass("worklogs_node",
   slots     = c(children = "list", fold_status = "character"),
   prototype = list(
     children    = structure(list(), names = character(0L)),
-    fold_status = NA_character_
+    fold_status = "unfolded"
   )
 )
 
@@ -133,8 +133,16 @@ setClass("worklogs_node",
 #' @rdname classes_worklogs_config
 #' @export
 setClass("worklogs_leaf",
-  slots     = c(worklogs = "data.frame", config = "worklogs_config"),
-  prototype = list(worklogs = data.frame(), config = new("worklogs_config"))
+  slots     = c(
+    worklogs = "data.frame",
+    name     = "character",
+    config   = "worklogs_config"
+  ),
+  prototype = list(
+    worklogs = data.frame(),
+    name     = "",
+    config   = new("worklogs_config")
+  )
 )
 
 #' @rdname classes_worklogs_config
@@ -181,19 +189,7 @@ setGeneric("worklogs",
 )
 
 mk_worklogs_node <- function(wkls, split_dfs, config) {
-  stopifnot(
-    is.list(wkls),
-    # TODO: should this verify that the list is named?
-    is_bool(split_dfs),
-    is(config, "worklogs_config")
-  )
-  raw_worklogs_node <- map(
-    .x        = wkls,
-    .f        = worklogs,
-    split_dfs = split_dfs,
-    config    = config
-  )
-  new("worklogs_node", children = raw_worklogs_node, fold_status = "unfolded")
+  mk_worklogs_impl_node(wkls, split_dfs, "", config)
 }
 
 #' @rdname worklogs
@@ -204,29 +200,30 @@ setMethod("worklogs",
 )
 
 mk_worklogs_leafs <- function(wkls, split_dfs, config) {
-  `if`(
-    split_dfs,
-    mk_worklogs_leafs_split_yes(wkls, config),
-    mk_worklogs_leafs_split_no(wkls, config)
-  )
-}
-
-mk_worklogs_leafs_split_yes <- function(wkls, config) {
-  stopifnot(is.data.frame(wkls), is(config, "worklogs_config"))
-  raw_leafs <- split(wkls, wkls[[config@labels@description]])  # TODO: helper function for wkls[[config@labels@description]]
-  worklogs_leafs_list <- map(
-    .x = raw_leafs,
-    .f = ~ new("worklogs_leaf", worklogs = .x, config = config)
-  )
-  new("worklogs_node", children = worklogs_leafs_list, fold_status = "unfolded")
-}
-
-mk_worklogs_leafs_split_no <- function(wkls, config) {
   stopifnot(
     is.data.frame(wkls),
-    length(unique(wkls[[config@labels@description]])) <= 1L  # TODO: helper function for wkls[[config@labels@description]]
+    is_bool(split_dfs),
+    is(config, "worklogs_config")
   )
-  worklogs_leaf <- new("worklogs_leaf", worklogs = wkls, config = config)
+  if (split_dfs) {
+    new_wkls <- mk_worklogs_impl_leafs_split_yes(wkls, config)
+  }
+  else {
+    # If there are no
+    if (nrow(wkls) == 0L) {
+      msg <- paste0(
+        "Cannot instantiate a `worklogs_leaf` object with 0 rows using ",
+        "`worklogs` when the `split_dfs` argument is `FALSE`"
+      )
+      stop(msg, call. = FALSE)
+    }
+    # Since `split_dfs` is `FALSE`, `wkls` is required to have exactly 1 task
+    # type, but we'll delegate that check to `mk_worklogs_impl_leafs_split_no`
+    task_name <- wkls[[config@labels@description]][1L]
+    wrapped_wkls <- set_names(list(wkls), task_name)
+    new_wkls <- mk_worklogs_impl_node(wrapped_wkls, split_dfs, "", config)
+  }
+  new_wkls
 }
 
 #' @rdname worklogs
@@ -234,6 +231,72 @@ mk_worklogs_leafs_split_no <- function(wkls, config) {
 setMethod("worklogs",
   signature  = "data.frame",
   definition = mk_worklogs_leafs
+)
+
+setGeneric("worklogs_impl",
+  def = function(wkls, split_dfs, name, config)
+    standardGeneric("worklogs_impl"),
+  signature = "wkls"
+)
+
+mk_worklogs_impl_node <- function(wkls, split_dfs, name, config) {
+  stopifnot(
+    is.list(wkls),
+    is_chr_nomiss_norepeat(names(wkls)),
+    is_bool(split_dfs),
+    is_string(name),
+    is(config, "worklogs_config")
+  )
+  raw_worklogs_node <- imap(
+    .x        = wkls,
+    .f        = worklogs_impl,
+    split_dfs = split_dfs,
+    config    = config
+  )
+  new("worklogs_node", children = raw_worklogs_node, fold_status = "unfolded")
+}
+
+setMethod("worklogs_impl",
+  signature  = "list",
+  definition = mk_worklogs_impl_node
+)
+
+mk_worklogs_impl_leafs <- function(wkls, split_dfs, name, config) {
+  `if`(
+    split_dfs,
+    compact(mk_worklogs_impl_leafs_split_yes(wkls, config)),
+    mk_worklogs_impl_leafs_split_no(wkls, name, config)
+  )
+}
+
+mk_worklogs_impl_leafs_split_yes <- function(wkls, config) {
+  mk_child_leafs <- function() {
+    worklogs_leafs <- imap(
+      .x = raw_leafs,
+      .f = ~ new("worklogs_leaf", worklogs = .x, name = .y, config = config)
+    )
+    new("worklogs_node", children = worklogs_leafs, fold_status = "unfolded")
+  }
+  stopifnot(is.data.frame(wkls), is(config, "worklogs_config"))
+  raw_leafs <- split(wkls, wkls[[config@labels@description]])  # TODO: helper function for wkls[[config@labels@description]]
+  `if`(
+    length(raw_leafs) == 0L,
+    NULL,
+    mk_child_leafs()
+  )
+}
+
+mk_worklogs_impl_leafs_split_no <- function(wkls, name, config) {
+  stopifnot(
+    is.data.frame(wkls),
+    length(unique(wkls[[config@labels@description]])) <= 1L  # TODO: helper function for wkls[[config@labels@description]]
+  )
+  worklogs_leaf <- new("worklogs_leaf", worklogs = wkls, name = name, config = config)
+}
+
+setMethod("worklogs_impl",
+  signature  = "data.frame",
+  definition = mk_worklogs_impl_leafs
 )
 
 

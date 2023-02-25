@@ -64,7 +64,7 @@ dev_r_packages <- tibble(
 )
 
 create_package <- tibble(
-  description = "Run 'create_package' and ''use_testthat'",
+  description = "Run 'create_package' and 'use_testthat'",
   start       = parse_ymdhm("2023-02-15 18:02"),
   end         = parse_ymdhm("2023-02-15 18:09"),
   duration    = end - start 
@@ -75,7 +75,7 @@ source_worklog <- list(
     "Install newest R"             = install_r,
     "Install development packages" = dev_r_packages
   ),
-  "Create R package skeleton" = create_package
+  "Run 'create_package' and 'use_testthat'" = create_package
 )
 
 config <- worklogs_config(
