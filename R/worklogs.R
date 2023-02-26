@@ -209,7 +209,8 @@ mk_worklogs_leafs <- function(wkls, split_dfs, config) {
     new_wkls <- mk_worklogs_impl_leafs_split_yes(wkls, config)
   }
   else {
-    # If there are no
+    # If there are no rows then we can't infer a name to use for the leaf so we
+    # give up
     if (nrow(wkls) == 0L) {
       msg <- paste0(
         "Cannot instantiate a `worklogs_leaf` object with 0 rows using ",
@@ -264,26 +265,19 @@ setMethod("worklogs_impl",
 mk_worklogs_impl_leafs <- function(wkls, split_dfs, name, config) {
   `if`(
     split_dfs,
-    compact(mk_worklogs_impl_leafs_split_yes(wkls, config)),
+    mk_worklogs_impl_leafs_split_yes(wkls, config),
     mk_worklogs_impl_leafs_split_no(wkls, name, config)
   )
 }
 
 mk_worklogs_impl_leafs_split_yes <- function(wkls, config) {
-  mk_child_leafs <- function() {
-    worklogs_leafs <- imap(
-      .x = raw_leafs,
-      .f = ~ new("worklogs_leaf", worklogs = .x, name = .y, config = config)
-    )
-    new("worklogs_node", children = worklogs_leafs, fold_status = "unfolded")
-  }
   stopifnot(is.data.frame(wkls), is(config, "worklogs_config"))
   raw_leafs <- split(wkls, wkls[[config@labels@description]])  # TODO: helper function for wkls[[config@labels@description]]
-  `if`(
-    length(raw_leafs) == 0L,
-    NULL,
-    mk_child_leafs()
+  worklogs_leafs <- imap(
+    .x = raw_leafs,
+    .f = ~ new("worklogs_leaf", worklogs = .x, name = .y, config = config)
   )
+  new("worklogs_node", children = worklogs_leafs, fold_status = "unfolded")
 }
 
 mk_worklogs_impl_leafs_split_no <- function(wkls, name, config) {

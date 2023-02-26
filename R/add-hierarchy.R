@@ -121,7 +121,11 @@ worklogs_from_parents_impl <- function(worklogs_df, parents, config) {
     )
   }
   has_parents <- map_int(parents, length) >= 1L
-  worklogs_leafs <- mk_worklogs_leafs(worklogs_df[! has_parents, ], TRUE, config)
+  worklogs_leafs <- mk_worklogs_leafs(
+    worklogs_df[! has_parents, ],
+    TRUE,
+    config
+  )
   new_parents <- parents[has_parents]
   children <- c(
     split_children(worklogs_df[has_parents, ]),
