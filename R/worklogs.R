@@ -1148,7 +1148,12 @@ filter_time_before_impl <- function(wkls, datetime) {
     start_label <- wkls@config@labels@start
     wkls_df <- wkls@worklogs[[start_label]]
     new_wkls_df <- wkls_df[wkls_df[[start_label]] < datetime, ]
-    new("worklogs_leaf", worklogs = new_wkls_df, config = wkls@config)
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = new_wkls_df,
+      name     = wkls@name,
+      config   = wkls@config
+    )
   }
   stopifnot(
     is(wkls, "worklogs"),
@@ -1176,7 +1181,12 @@ filter_time_after_impl <- function(wkls, datetime) {
     start_label <- wkls@config@labels@start
     wkls_df <- wkls@worklogs
     new_wkls_df <- wkls_df[wkls_df[[start_label]] >= datetime, ]
-    new("worklogs_leaf", worklogs = new_wkls_df, config = wkls@config)
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = new_wkls_df,
+      name     = wkls@name,
+      config   = wkls@config
+    )
   }
   stopifnot(
     is(wkls, "worklogs"),
@@ -1207,7 +1217,12 @@ filter_time_between_impl <- function(wkls, before_datetime, after_datetime) {
     is_after_start <- before_datetime <= wkls_df[[start_label]]
     is_before_end <- wkls_df[[start_label]] < after_datetime
     new_wkls_df <- wkls_df[is_after_start & is_before_end, ]
-    new("worklogs_leaf", worklogs = new_wkls_df, config = wkls@config)
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = new_wkls_df,
+      name     = wkls@name,
+      config   = wkls@config
+    )
   }
   stopifnot(
     is(wkls, "worklogs"),
@@ -1246,7 +1261,12 @@ filter_this_week_impl <- function(wkls) {
     start_label <- wkls@config@labels@start
     wkls_df <- wkls@worklogs
     new_wkls_df <- wkls_df[wkls_df[[start_label]] >= this_week_start, ]
-    new("worklogs_leaf", worklogs = new_wkls_df, config = wkls@config)
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = new_wkls_df,
+      name     = wkls@name,
+      config   = wkls@config
+    )
   }
   stopifnot(is(wkls, "worklogs"))
   this_week_start <- calc_this_week_start(lubridate::today())
@@ -1279,7 +1299,12 @@ filter_last_week_impl <- function(wkls) {
     is_after_start <- last_week_start <= wkls_df[[start_label]]
     is_before_end <- wkls_df[[start_label]] < this_week_start
     new_wkls_df <- wkls_df[is_after_start & is_before_end, ]
-    new("worklogs_leaf", worklogs = new_wkls_df, config = wkls@config)
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = new_wkls_df,
+      name     = wkls@name,
+      config   = wkls@config
+    )
   }
   stopifnot(is(wkls, "worklogs"))
   today_datetime <- lubridate::today()
