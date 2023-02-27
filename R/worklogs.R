@@ -114,6 +114,8 @@ worklogs_config <- function(description_label,
 #'
 #' @slot children A named list of `worklogs` objects.
 #' @slot fold_status Either `"unfolded"` or `"folded"`.
+#' @slot prototype A data frame with 0 rows used to specify the form of all
+#'   children worklog entries.
 #'
 #' @name classes_worklogs
 NULL
@@ -121,14 +123,20 @@ NULL
 #' @rdname classes_worklogs
 #' @export
 setClass("worklogs_node",
-  slots     = c(children = "list", fold_status = "character"),
+  slots     = c(
+    children    = "list",
+    fold_status = "character",
+    prototype   = "data.frame"
+  ),
   prototype = list(
     children    = structure(list(), names = character(0L)),
     fold_status = "unfolded"
+    prototype   = data.frame()
   )
 )
 
 #' @slot worklogs A data frame of worklog entries.
+#' @slot name A string providing the name of the worklogs.
 #' @slot config A `worklogs_config` object.
 #' @rdname classes_worklogs_config
 #' @export
