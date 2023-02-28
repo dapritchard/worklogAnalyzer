@@ -108,6 +108,7 @@ worklogs_config <- function(description_label,
 
 # `worklog` class defintions ---------------------------------------------------
 
+
 #' Configuration Classes
 #'
 #' S4 classes used for representing worklogs.
@@ -123,15 +124,26 @@ NULL
 #' @rdname classes_worklogs
 #' @export
 setClass("worklogs_node",
-  slots     = c(
+  slots = c(
     children    = "list",
     fold_status = "character",
     prototype   = "data.frame"
   ),
   prototype = list(
     children    = structure(list(), names = character(0L)),
-    fold_status = "unfolded"
+    fold_status = "unfolded",
     prototype   = data.frame()
+  )
+)
+
+setClass("no_prototype_node",
+  slots = c(
+    children    = "list",
+    fold_status = "character"
+  ),
+  prototype = list(
+    children    = structure(list(), names = character(0L)),
+    fold_status = "unfolded"
   )
 )
 
@@ -242,13 +254,100 @@ setMethod("worklogs",
   definition = mk_worklogs_leafs
 )
 
+setGeneric("extract_prototype",
+  def       = function(wkls) standardGeneric("extract_prototype"),
+  signature = "wkls"
+)
+
+extract_prototype_worklogs_node <- function(wkls) {
+  stopifnot(is(wkls, "worklogs_node"))
+  wkls@prototype
+}
+
+setMethod("extract_prototype",
+  signature  = "worklogs_node",
+  definition = extract_prototype_worklogs_node
+)
+
+extract_prototype_worklogs_leaf <- function(wkls) {
+  stopifnot(is(wkls, "worklogs_leaf"))
+  wkls@worklogs[integer(0L), ]
+}
+
+setMethod("extract_prototype",
+  signature  = "worklogs_leaf",
+  definition = extract_prototype_worklogs_leaf
+)
+
+setGeneric("add_prototype",
+  def       = function(wkls, prototype) standardGeneric("add_prototype"),
+  signature = "wkls"
+)
+
+add_prototype_worklogs_node <- function(wkls, prototype) {
+  stopifnot(is(wkls, "worklogs_node"))
+  new_children <- map(wkls@children, add_prototype, prototype = prototype)
+  new("worklogs_node", new_children, wkls@fold_status, prototype)
+}
+
+setMethod("add_prototype",
+  signature  = "worklogs_node",
+  definition = add_prototype_worklogs_node
+)
+
+add_prototype_worklogs_leaf <- function(wkls, prototype) {
+  stopifnot(is(wkls, "worklogs_leaf"))
+  wkls
+}
+
+setMethod("add_prototype",
+  signature  = "worklogs_leaf",
+  definition = add_prototype_worklogs_leaf
+)
+
 setGeneric("worklogs_impl",
   def = function(wkls, split_dfs, name, config)
     standardGeneric("worklogs_impl"),
   signature = "wkls"
 )
 
+try_adding_prototypes <- function(wkls) {
+  is_no_prototype_node <- map_lgl(raw_worklogs_node_orig, is, "no_prototype_node")
+  if (any(is_no_prototype_node) && (! all(is_no_prototype_node))) {
+    child_worklog <- raw_worklogs_node[! is_no_prototype_node][[1L]]
+    prototype <- extract_prototype(child_worklog)
+    new_wkls <- add_prototype(wkls, prototype)
+  }
+  else {
+    new_wkls <- wkls
+  }
+  new_wkls
+}
+
+# fixup_prototypes_do <- function(wkls, prototype) {
+#   is_no_prototype_node <- map_lgl(raw_worklogs_node_orig, is, "no_prototype_node")
+# }
+
+# add_prototype <- function(wkls, prototype) {
+#   is_no_prototype_node <- function(x) {
+#     is(x, "no_prototype_node")
+#   }
+#   stopifnot(is(wkls, "no_prototype_node"))
+#   children <-
+#   new("worklogs_node", wkls@children, wkls@fold_status, prototype)
+
+#   modify_if(wkls, is_no_prototype_node, add_prototype, prototype)
+# }
+
 mk_worklogs_impl_node <- function(wkls, split_dfs, name, config) {
+  # add_prototypes <- function() {
+  #   is_no_prototype_node <- function(x) {
+  #     is(x, "no_prototype_node")
+  #   }
+  #   child_worklog <- raw_worklogs_node[! is_no_prototype_node][[1L]]
+  #   prototype <- extract_prototype(child_worklog)
+  #   modify_if(raw_worklogs_node, is_no_prototype_node, add_prototype, prototype)
+  # }
   stopifnot(
     is.list(wkls),
     is_chr_nomiss_norepeat(names(wkls)),
@@ -256,12 +355,13 @@ mk_worklogs_impl_node <- function(wkls, split_dfs, name, config) {
     is_string(name),
     is(config, "worklogs_config")
   )
-  raw_worklogs_node <- imap(
+  raw_worklogs_node_orig <- imap(
     .x        = wkls,
     .f        = worklogs_impl,
     split_dfs = split_dfs,
     config    = config
   )
+  raw_worklogs_node <- try_adding_prototypes(raw_worklogs_node_orig)
   new("worklogs_node", children = raw_worklogs_node, fold_status = "unfolded")
 }
 
