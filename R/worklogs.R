@@ -311,19 +311,6 @@ setGeneric("worklogs_impl",
   signature = "wkls"
 )
 
-try_adding_prototypes <- function(wkls) {
-  is_no_prototype_node <- map_lgl(raw_worklogs_node_orig, is, "no_prototype_node")
-  if (any(is_no_prototype_node) && (! all(is_no_prototype_node))) {
-    child_worklog <- raw_worklogs_node[! is_no_prototype_node][[1L]]
-    prototype <- extract_prototype(child_worklog)
-    new_wkls <- add_prototype(wkls, prototype)
-  }
-  else {
-    new_wkls <- wkls
-  }
-  new_wkls
-}
-
 # fixup_prototypes_do <- function(wkls, prototype) {
 #   is_no_prototype_node <- map_lgl(raw_worklogs_node_orig, is, "no_prototype_node")
 # }
@@ -340,6 +327,18 @@ try_adding_prototypes <- function(wkls) {
 # }
 
 mk_worklogs_impl_node <- function(wkls, split_dfs, name, config) {
+  try_adding_prototypes <- function(wkls) {
+    is_no_prototype_node <- map_lgl(raw_worklogs_node_orig, is, "no_prototype_node")
+    if (any(is_no_prototype_node) && (! all(is_no_prototype_node))) {
+      child_worklog <- raw_worklogs_node[! is_no_prototype_node][[1L]]
+      prototype <- extract_prototype(child_worklog)
+      new_wkls <- add_prototype(wkls, prototype)
+    }
+    else {
+      new_wkls <- wkls
+    }
+    new_wkls
+  }
   # add_prototypes <- function() {
   #   is_no_prototype_node <- function(x) {
   #     is(x, "no_prototype_node")
