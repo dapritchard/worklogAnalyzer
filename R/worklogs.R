@@ -209,7 +209,17 @@ setGeneric("worklogs",
 )
 
 mk_worklogs_node <- function(wkls, split_dfs, config) {
-  mk_worklogs_impl_node(wkls, split_dfs, "", config)
+  new_wkls <- mk_worklogs_impl_node(wkls, split_dfs, "", config)
+  is_no_prototype_node <- map_lgl(
+    .x     = new_wkls@children,
+    .f     = is,
+    class2 = "no_prototype_node"
+  )
+  len_new_wkls <- length(new_wkls@children)
+  if ((len_new_wkls == 0L) || any(is_no_prototype_node)) {
+    stop("Can't use the `worklogs` constructor without having any data frames")
+  }
+  new_wkls
 }
 
 #' @rdname worklogs
@@ -284,10 +294,20 @@ setGeneric("add_prototype",
   signature = "wkls"
 )
 
-add_prototype_worklogs_node <- function(wkls, prototype) {
-  stopifnot(is(wkls, "worklogs_node"))
+add_prototype_no_prototype_node <- function(wkls, prototype) {
+  stopifnot(is(wkls, "no_prototype_node"))
   new_children <- map(wkls@children, add_prototype, prototype = prototype)
   new("worklogs_node", new_children, wkls@fold_status, prototype)
+}
+
+setMethod("add_prototype",
+  signature  = "no_prototype_node",
+  definition = add_prototype_no_prototype_node
+)
+
+add_prototype_worklogs_node <- function(wkls, prototype) {
+  stopifnot(is(wkls, "worklogs_node"))
+  wkls
 }
 
 setMethod("add_prototype",
@@ -327,18 +347,29 @@ setGeneric("worklogs_impl",
 # }
 
 mk_worklogs_impl_node <- function(wkls, split_dfs, name, config) {
-  try_adding_prototypes <- function(wkls) {
-    is_no_prototype_node <- map_lgl(raw_worklogs_node_orig, is, "no_prototype_node")
-    if (any(is_no_prototype_node) && (! all(is_no_prototype_node))) {
-      child_worklog <- raw_worklogs_node[! is_no_prototype_node][[1L]]
-      prototype <- extract_prototype(child_worklog)
-      new_wkls <- add_prototype(wkls, prototype)
+  extract_maybe_prototype <- function(wkls_list) {
+    is_no_prototype_node <- map_lgl(wkls_list, is, "no_prototype_node")
+    if (any(! is_no_prototype_node)) {
+      child_worklog <- wkls_list[! is_no_prototype_node][[1L]]
+      maybe_prototype <- extract_prototype(child_worklog)
     }
     else {
-      new_wkls <- wkls
+      maybe_prototype <- NULL
     }
-    new_wkls
+    maybe_prototype
   }
+  # try_adding_prototypes <- function(wkls) {
+  #   is_no_prototype_node <- map_lgl(raw_worklogs_node_orig, is, "no_prototype_node")
+  #   if (any(is_no_prototype_node) && (! all(is_no_prototype_node))) {
+  #     child_worklog <- raw_worklogs_node[! is_no_prototype_node][[1L]]
+  #     prototype <- extract_prototype(child_worklog)
+  #     new_wkls <- add_prototype(wkls, prototype)
+  #   }
+  #   else {
+  #     new_wkls <- wkls
+  #   }
+  #   new_wkls
+  # }
   # add_prototypes <- function() {
   #   is_no_prototype_node <- function(x) {
   #     is(x, "no_prototype_node")
@@ -354,14 +385,44 @@ mk_worklogs_impl_node <- function(wkls, split_dfs, name, config) {
     is_string(name),
     is(config, "worklogs_config")
   )
-  raw_worklogs_node_orig <- imap(
+  children <- imap(
     .x        = wkls,
     .f        = worklogs_impl,
     split_dfs = split_dfs,
     config    = config
   )
-  raw_worklogs_node <- try_adding_prototypes(raw_worklogs_node_orig)
-  new("worklogs_node", children = raw_worklogs_node, fold_status = "unfolded")
+  maybe_prototype <- extract_maybe_prototype(children)
+  if (is.null(maybe_prototype)) {
+    new_wkls <- new(
+      Class       = "no_prototype_node",
+      children    = children,
+      fold_status = "unfolded"
+    )
+  }
+  else {
+    updated_children <- map(children, add_prototype, maybe_prototype)
+    new_wkls <- new(
+      Class       = "worklogs_node",
+      children    = updated_children,
+      fold_status = "unfolded",
+      prototype   = maybe_prototype
+    )
+  }
+  new_wkls
+  # children <- `if`(
+  #   is.null(maybe_prototype),
+  #   new(
+  #     Class       = "no_prototype_node",
+  #     children    = children,
+  #     fold_status = "unfolded"
+  #   ),
+  #   new(
+  #     Class       = "no_prototype_node",
+  #     children    = add_prototype(children, prototype),
+  #     fold_status = "unfolded",
+  #     prototype   = maybe_prototype
+  #   )
+  # )
 }
 
 setMethod("worklogs_impl",
