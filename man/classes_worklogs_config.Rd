@@ -29,6 +29,8 @@ description.}
 
 \item{\code{worklogs}}{A data frame of worklog entries.}
 
+\item{\code{name}}{A string providing the name of the worklogs.}
+
 \item{\code{config}}{A \code{worklogs_config} object.}
 }}
 

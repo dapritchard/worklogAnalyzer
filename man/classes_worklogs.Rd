@@ -14,5 +14,8 @@ S4 classes used for representing worklogs.
 \item{\code{children}}{A named list of \code{worklogs} objects.}
 
 \item{\code{fold_status}}{Either \code{"unfolded"} or \code{"folded"}.}
+
+\item{\code{prototype}}{A data frame with 0 rows used to specify the form of all
+children worklog entries.}
 }}
 
