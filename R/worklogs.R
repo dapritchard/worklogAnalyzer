@@ -956,7 +956,7 @@ setClass("effort_leaf",
     n_descendents = "integer"
   ),
   prototype = list(
-    fold_status   = NA_character_,
+    fold_status   = "unfolded",
     sum_effort    = NA_real_,
     n_descendents = NA_integer_
   )
