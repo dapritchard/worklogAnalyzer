@@ -217,7 +217,7 @@ mk_worklogs_node <- function(wkls, split_dfs, config) {
   )
   len_new_wkls <- length(new_wkls@children)
   if ((len_new_wkls == 0L) || any(is_no_prototype_node)) {
-    stop("Can't use the `worklogs` constructor without having any data frames")
+    stop("Can't use the `worklogs` constructor without including any data frames")
   }
   new_wkls
 }

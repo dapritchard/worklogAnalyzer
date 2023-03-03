@@ -2,6 +2,9 @@ parse_ymdhm <- function(x) {
   lubridate::parse_date_time(x, "Ymd HM")
 }
 
+
+# Source data ------------------------------------------------------------------
+
 install_r <- tibble(
   description = "Install latest version of R",
   start       = parse_ymdhm(c("2023-02-14 20:12", "2023-02-15 18:17")),
@@ -24,9 +27,9 @@ create_package <- tibble(
 )
 
 source_worklog <- list(
-  "Setup development env" = list(
-    "Install newest R"             = install_r,
-    "Install development packages" = dev_r_packages
+  "Setup development environment" = list(
+    "Install latest version of R"   = install_r,
+    "Install devtools and testthat" = dev_r_packages
   ),
   "Run 'create_package' and 'use_testthat'" = create_package
 )
@@ -41,14 +44,60 @@ config <- worklogs_config(
 empty_list <- structure(list(), names = character(0L))
 
 
+# Target Objects ---------------------------------------------------------------
+
+prototype <- install_r[integer(0L), ]
+
+wkls_install_r <- new(
+  Class    = "worklogs_leaf",
+  worklogs = install_r,
+  name     = "Install latest version of R",
+  config   = config
+)
+
+wkls_dev_r_packages <- new(
+  Class    = "worklogs_leaf",
+  worklogs = dev_r_packages,
+  name     = "Install devtools and testthat",
+  config   = config
+)
+
+wkls_create_package <- new(
+  Class    = "worklogs_leaf",
+  worklogs = create_package,
+  name     = "Run 'create_package' and 'use_testthat'",
+  config   = config
+)
+
+wkls_setup_dev <- new(
+  Class       = "worklogs_node",
+  children    = list(
+    "Install latest version of R"   = wkls_install_r,
+    "Install devtools and testthat" = wkls_dev_r_packages
+  ),
+  fold_status = "unfolded",
+  prototype   = prototype
+)
+
+wkls_toplevel <- new(
+  Class       = "worklogs_node",
+  children    = list(
+    "Setup development environment"           = wkls_setup_dev,
+    "Run 'create_package' and 'use_testthat'" = wkls_create_package
+  ),
+  fold_status = "unfolded",
+  prototype   = prototype
+)
+
+
 # Begin tests ------------------------------------------------------------------
 
-# worklogs(empty_list, FALSE, config)
-# worklogs(list(a = empty_list, b = empty_list), FALSE, config)
+test_that("`worklogs` creates a multiple level worklogs tree", {
+  actual <- worklogs(source_worklog, FALSE, config)
+  expect_identical(actual, wkls_toplevel)
+})
 
-wkls <- worklogs(source_worklog, FALSE, config)
-
-# test_that("", {
-
-#   expect_equal(2 * 2, 4)
-# })
+test_that("`worklogs` throws an error for trees without any leafs", {
+  expect_error(worklogs(empty_list, FALSE, config))
+  expect_error(worklogs(list(a = empty_list, b = empty_list), FALSE, config))
+})
