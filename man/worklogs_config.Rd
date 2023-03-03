@@ -6,10 +6,10 @@
 \usage{
 worklogs_config(
   description_label,
-  start_label,
-  end_label,
-  duration_label,
-  tags_label
+  start_label = NA_character_,
+  end_label = NA_character_,
+  duration_label = NA_character_,
+  tags_label = NA_character_
 )
 }
 \arguments{

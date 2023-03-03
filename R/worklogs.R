@@ -108,12 +108,15 @@ worklogs_config <- function(description_label,
 
 # `worklog` class defintions ---------------------------------------------------
 
+
 #' Configuration Classes
 #'
 #' S4 classes used for representing worklogs.
 #'
 #' @slot children A named list of `worklogs` objects.
 #' @slot fold_status Either `"unfolded"` or `"folded"`.
+#' @slot prototype A data frame with 0 rows used to specify the form of all
+#'   children worklog entries.
 #'
 #' @name classes_worklogs
 NULL
@@ -121,7 +124,23 @@ NULL
 #' @rdname classes_worklogs
 #' @export
 setClass("worklogs_node",
-  slots     = c(children = "list", fold_status = "character"),
+  slots = c(
+    children    = "list",
+    fold_status = "character",
+    prototype   = "data.frame"
+  ),
+  prototype = list(
+    children    = structure(list(), names = character(0L)),
+    fold_status = "unfolded",
+    prototype   = data.frame()
+  )
+)
+
+setClass("no_prototype_node",
+  slots = c(
+    children    = "list",
+    fold_status = "character"
+  ),
   prototype = list(
     children    = structure(list(), names = character(0L)),
     fold_status = "unfolded"
@@ -129,6 +148,7 @@ setClass("worklogs_node",
 )
 
 #' @slot worklogs A data frame of worklog entries.
+#' @slot name A string providing the name of the worklogs.
 #' @slot config A `worklogs_config` object.
 #' @rdname classes_worklogs_config
 #' @export
@@ -189,7 +209,17 @@ setGeneric("worklogs",
 )
 
 mk_worklogs_node <- function(wkls, split_dfs, config) {
-  mk_worklogs_impl_node(wkls, split_dfs, "", config)
+  new_wkls <- mk_worklogs_impl_node(wkls, split_dfs, "", config)
+  is_no_prototype_node <- map_lgl(
+    .x     = new_wkls@children,
+    .f     = is,
+    class2 = "no_prototype_node"
+  )
+  len_new_wkls <- length(new_wkls@children)
+  if ((len_new_wkls == 0L) || any(is_no_prototype_node)) {
+    stop("Can't use the `worklogs` constructor without including any data frames")
+  }
+  new_wkls
 }
 
 #' @rdname worklogs
@@ -234,13 +264,120 @@ setMethod("worklogs",
   definition = mk_worklogs_leafs
 )
 
+setGeneric("extract_prototype",
+  def       = function(wkls) standardGeneric("extract_prototype"),
+  signature = "wkls"
+)
+
+extract_prototype_worklogs_node <- function(wkls) {
+  stopifnot(is(wkls, "worklogs_node"))
+  wkls@prototype
+}
+
+setMethod("extract_prototype",
+  signature  = "worklogs_node",
+  definition = extract_prototype_worklogs_node
+)
+
+extract_prototype_worklogs_leaf <- function(wkls) {
+  stopifnot(is(wkls, "worklogs_leaf"))
+  wkls@worklogs[integer(0L), ]
+}
+
+setMethod("extract_prototype",
+  signature  = "worklogs_leaf",
+  definition = extract_prototype_worklogs_leaf
+)
+
+setGeneric("add_prototype",
+  def       = function(wkls, prototype) standardGeneric("add_prototype"),
+  signature = "wkls"
+)
+
+add_prototype_no_prototype_node <- function(wkls, prototype) {
+  stopifnot(is(wkls, "no_prototype_node"))
+  new_children <- map(wkls@children, add_prototype, prototype = prototype)
+  new("worklogs_node", new_children, wkls@fold_status, prototype)
+}
+
+setMethod("add_prototype",
+  signature  = "no_prototype_node",
+  definition = add_prototype_no_prototype_node
+)
+
+add_prototype_worklogs_node <- function(wkls, prototype) {
+  stopifnot(is(wkls, "worklogs_node"))
+  wkls
+}
+
+setMethod("add_prototype",
+  signature  = "worklogs_node",
+  definition = add_prototype_worklogs_node
+)
+
+add_prototype_worklogs_leaf <- function(wkls, prototype) {
+  stopifnot(is(wkls, "worklogs_leaf"))
+  wkls
+}
+
+setMethod("add_prototype",
+  signature  = "worklogs_leaf",
+  definition = add_prototype_worklogs_leaf
+)
+
 setGeneric("worklogs_impl",
   def = function(wkls, split_dfs, name, config)
     standardGeneric("worklogs_impl"),
   signature = "wkls"
 )
 
+# fixup_prototypes_do <- function(wkls, prototype) {
+#   is_no_prototype_node <- map_lgl(raw_worklogs_node_orig, is, "no_prototype_node")
+# }
+
+# add_prototype <- function(wkls, prototype) {
+#   is_no_prototype_node <- function(x) {
+#     is(x, "no_prototype_node")
+#   }
+#   stopifnot(is(wkls, "no_prototype_node"))
+#   children <-
+#   new("worklogs_node", wkls@children, wkls@fold_status, prototype)
+
+#   modify_if(wkls, is_no_prototype_node, add_prototype, prototype)
+# }
+
 mk_worklogs_impl_node <- function(wkls, split_dfs, name, config) {
+  extract_maybe_prototype <- function(wkls_list) {
+    is_no_prototype_node <- map_lgl(wkls_list, is, "no_prototype_node")
+    if (any(! is_no_prototype_node)) {
+      child_worklog <- wkls_list[! is_no_prototype_node][[1L]]
+      maybe_prototype <- extract_prototype(child_worklog)
+    }
+    else {
+      maybe_prototype <- NULL
+    }
+    maybe_prototype
+  }
+  # try_adding_prototypes <- function(wkls) {
+  #   is_no_prototype_node <- map_lgl(raw_worklogs_node_orig, is, "no_prototype_node")
+  #   if (any(is_no_prototype_node) && (! all(is_no_prototype_node))) {
+  #     child_worklog <- raw_worklogs_node[! is_no_prototype_node][[1L]]
+  #     prototype <- extract_prototype(child_worklog)
+  #     new_wkls <- add_prototype(wkls, prototype)
+  #   }
+  #   else {
+  #     new_wkls <- wkls
+  #   }
+  #   new_wkls
+  # }
+  # add_prototypes <- function() {
+  #   is_no_prototype_node <- function(x) {
+  #     is(x, "no_prototype_node")
+  #   }
+  #   child_worklog <- raw_worklogs_node[! is_no_prototype_node][[1L]]
+  #   prototype <- extract_prototype(child_worklog)
+  #   modify_if(raw_worklogs_node, is_no_prototype_node, add_prototype, prototype)
+  # }
   stopifnot(
     is.list(wkls),
     is_chr_nomiss_norepeat(names(wkls)),
@@ -248,13 +385,44 @@ mk_worklogs_impl_node <- function(wkls, split_dfs, name, config) {
     is_string(name),
     is(config, "worklogs_config")
   )
-  raw_worklogs_node <- imap(
+  children <- imap(
     .x        = wkls,
     .f        = worklogs_impl,
     split_dfs = split_dfs,
     config    = config
   )
-  new("worklogs_node", children = raw_worklogs_node, fold_status = "unfolded")
+  maybe_prototype <- extract_maybe_prototype(children)
+  if (is.null(maybe_prototype)) {
+    new_wkls <- new(
+      Class       = "no_prototype_node",
+      children    = children,
+      fold_status = "unfolded"
+    )
+  }
+  else {
+    updated_children <- map(children, add_prototype, maybe_prototype)
+    new_wkls <- new(
+      Class       = "worklogs_node",
+      children    = updated_children,
+      fold_status = "unfolded",
+      prototype   = maybe_prototype
+    )
+  }
+  new_wkls
+  # children <- `if`(
+  #   is.null(maybe_prototype),
+  #   new(
+  #     Class       = "no_prototype_node",
+  #     children    = children,
+  #     fold_status = "unfolded"
+  #   ),
+  #   new(
+  #     Class       = "no_prototype_node",
+  #     children    = add_prototype(children, prototype),
+  #     fold_status = "unfolded",
+  #     prototype   = maybe_prototype
+  #   )
+  # )
 }
 
 setMethod("worklogs_impl",
@@ -788,7 +956,7 @@ setClass("effort_leaf",
     n_descendents = "integer"
   ),
   prototype = list(
-    fold_status   = NA_character_,
+    fold_status   = "unfolded",
     sum_effort    = NA_real_,
     n_descendents = NA_integer_
   )
@@ -1140,7 +1308,12 @@ filter_time_before_impl <- function(wkls, datetime) {
     start_label <- wkls@config@labels@start
     wkls_df <- wkls@worklogs[[start_label]]
     new_wkls_df <- wkls_df[wkls_df[[start_label]] < datetime, ]
-    new("worklogs_leaf", worklogs = new_wkls_df, config = wkls@config)
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = new_wkls_df,
+      name     = wkls@name,
+      config   = wkls@config
+    )
   }
   stopifnot(
     is(wkls, "worklogs"),
@@ -1168,7 +1341,12 @@ filter_time_after_impl <- function(wkls, datetime) {
     start_label <- wkls@config@labels@start
     wkls_df <- wkls@worklogs
     new_wkls_df <- wkls_df[wkls_df[[start_label]] >= datetime, ]
-    new("worklogs_leaf", worklogs = new_wkls_df, config = wkls@config)
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = new_wkls_df,
+      name     = wkls@name,
+      config   = wkls@config
+    )
   }
   stopifnot(
     is(wkls, "worklogs"),
@@ -1199,7 +1377,12 @@ filter_time_between_impl <- function(wkls, before_datetime, after_datetime) {
     is_after_start <- before_datetime <= wkls_df[[start_label]]
     is_before_end <- wkls_df[[start_label]] < after_datetime
     new_wkls_df <- wkls_df[is_after_start & is_before_end, ]
-    new("worklogs_leaf", worklogs = new_wkls_df, config = wkls@config)
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = new_wkls_df,
+      name     = wkls@name,
+      config   = wkls@config
+    )
   }
   stopifnot(
     is(wkls, "worklogs"),
@@ -1238,7 +1421,12 @@ filter_this_week_impl <- function(wkls) {
     start_label <- wkls@config@labels@start
     wkls_df <- wkls@worklogs
     new_wkls_df <- wkls_df[wkls_df[[start_label]] >= this_week_start, ]
-    new("worklogs_leaf", worklogs = new_wkls_df, config = wkls@config)
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = new_wkls_df,
+      name     = wkls@name,
+      config   = wkls@config
+    )
   }
   stopifnot(is(wkls, "worklogs"))
   this_week_start <- calc_this_week_start(lubridate::today())
@@ -1271,7 +1459,12 @@ filter_last_week_impl <- function(wkls) {
     is_after_start <- last_week_start <= wkls_df[[start_label]]
     is_before_end <- wkls_df[[start_label]] < this_week_start
     new_wkls_df <- wkls_df[is_after_start & is_before_end, ]
-    new("worklogs_leaf", worklogs = new_wkls_df, config = wkls@config)
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = new_wkls_df,
+      name     = wkls@name,
+      config   = wkls@config
+    )
   }
   stopifnot(is(wkls, "worklogs"))
   today_datetime <- lubridate::today()
