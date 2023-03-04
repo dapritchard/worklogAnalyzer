@@ -841,28 +841,60 @@ setGeneric("remove_worklogs_impl",
 
 remove_worklogs_impl_node <- function(wkls, path, parents) {
 
-  # Update the appropriate child of `wkls`
-  remove_worklogs_impl <- function() {
+  # # Update the appropriate child of `wkls`
+  # remove_worklogs_impl <- function() {
 
-    # Extract children
-    children <- wkls@children
+  #   # Extract children
+  #   children <- wkls@children
 
-    # Update `path` and `parents` information for upcoming call
-    stopifnot(length(path) >= 1L)
-    child_name <- path[1L]
-    new_path <- path[-1L]
-    new_parents <- c(parents, child_name)
+  #   # Update `path` and `parents` information for upcoming call
+  #   stopifnot(length(path) >= 1L)
+  #   child_name <- path[1L]
+  #   new_path <- path[-1L]
+  #   new_parents <- c(parents, child_name)
 
-    # Remove the appropriate child
-    child <- chuck(children, child_name)
-    remove_worklogs_impl_node(child, new_path, new_parents)
-  }
+  #   # Remove the appropriate child
+  #   child <- chuck(children, child_name)
+  #   remove_worklogs_impl_node(child, new_path, new_parents)
+  # }
 
-  `if`(
-    length(path) == 0L,
-    wkls,
-    remove_worklogs_impl()
+  # `if`(
+  #   length(path) == 1L,
+  #   wkls,
+  #   remove_worklogs_impl()
+  # )
+
+  stopifnot(
+    is(wkls, "worklogs_node"),
+    is_chr_nomiss(path),
+    length(path) >= 1L,
+    is_chr_nomiss(parents),
   )
+
+  # Extract children
+  children <- wkls@children
+  children_names <- names(children)
+
+  # Update `path` and `parents` information for upcoming call
+  stopifnot(length(path) >= 1L)
+  child_name <- path[1L]
+  new_path <- path[-1L]
+  new_parents <- c(parents, child_name)
+
+  if (! (child_name %in% children_names)) {
+    msg <- sprintf(
+      paste0(
+        "The child '%s' with the following parents does not exist:\n",
+        "    %s\n",
+        "The following children were asked for:\n",
+        "    %s\n"
+      ),
+      child_name,
+      parents,
+      c(parents, path)
+    )
+    stop(msg)
+  }
 }
 
 setMethod("remove_worklogs_impl",
@@ -871,17 +903,14 @@ setMethod("remove_worklogs_impl",
 )
 
 remove_worklogs_impl_leaf <- function(wkls, path, parents) {
-  if (length(path) >= 1L) {
-    msg <- sprintf(
-      "%s\n%s%s\n%s",
-      "Can't get the child of a leaf node with the following parents:",
-      sprintf("    %s\n", path),
-      "The following children were asked for: ",
-      sprintf("    %s\n", path)
-    )
-    stop(msg)
-  }
-  wkls
+  msg <- sprintf(
+    "%s\n%s%s\n%s",
+    "Can't get the child of a leaf node with the following parents:",
+    sprintf("    %s\n", path),
+    "The following children were asked for: ",
+    sprintf("    %s\n", path)
+  )
+  stop(msg)
 }
 
 setMethod("remove_worklogs_impl",
