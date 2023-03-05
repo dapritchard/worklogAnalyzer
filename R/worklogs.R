@@ -841,39 +841,17 @@ setGeneric("remove_worklogs_impl",
 
 remove_worklogs_impl_node <- function(wkls, path, parents) {
 
-  # # Update the appropriate child of `wkls`
-  # remove_worklogs_impl <- function() {
-
-  #   # Extract children
-  #   children <- wkls@children
-
-  #   # Update `path` and `parents` information for upcoming call
-  #   stopifnot(length(path) >= 1L)
-  #   child_name <- path[1L]
-  #   new_path <- path[-1L]
-  #   new_parents <- c(parents, child_name)
-
-  #   # Remove the appropriate child
-  #   child <- chuck(children, child_name)
-  #   remove_worklogs_impl_node(child, new_path, new_parents)
-  # }
-
-  # `if`(
-  #   length(path) == 1L,
-  #   wkls,
-  #   remove_worklogs_impl()
-  # )
-
   stopifnot(
     is(wkls, "worklogs_node"),
     is_chr_nomiss(path),
     length(path) >= 1L,
-    is_chr_nomiss(parents),
+    is_chr_nomiss(parents)
   )
 
   # Extract children
   children <- wkls@children
   children_names <- names(children)
+  stopifnot(is_chr_nomiss_norepeat(children_names))
 
   # Update `path` and `parents` information for upcoming call
   stopifnot(length(path) >= 1L)
@@ -881,20 +859,48 @@ remove_worklogs_impl_node <- function(wkls, path, parents) {
   new_path <- path[-1L]
   new_parents <- c(parents, child_name)
 
-  if (! (child_name %in% children_names)) {
+  # TODO comment
+  path_match_lgl <- (child_name == children_names)
+  n_path_matches <- sum(path_match_lgl)
+
+  # No matches signifies a user error. Two or more matches is impossible to
+  # reach under a well-formed `worklogs_node` object
+  if (n_path_matches == 0L) {
     msg <- sprintf(
       paste0(
-        "The child '%s' with the following parents does not exist:\n",
-        "    %s\n",
+        "\nThe child '%s' with the following parents does not exist:\n",
+        "%s\n\n",
         "The following children were asked for:\n",
-        "    %s\n"
+        "%s\n"
       ),
       child_name,
-      parents,
-      c(parents, path)
+      paste0("    ", parents, collapse = "\n"),
+      paste0("    ", c(parents, path), collapse = "\n")
     )
     stop(msg)
   }
+  stopifnot(n_path_matches == 1L)
+
+  # TODO comment
+  if (length(path) == 1L) {
+    children <- children[! path_match_lgl]
+  }
+  else {
+    child <- remove_worklogs_impl(
+      wkls    = children[[child_name]],
+      path    = new_path,
+      parents = new_parents
+    )
+    children[[child_name]] <- child
+  }
+
+  # TODO comment
+  new(
+    Class       = "worklogs_node",
+    children    = children,
+    fold_status = wkls@fold_status,
+    prototype   = wkls@prototype
+  )
 }
 
 setMethod("remove_worklogs_impl",
@@ -904,11 +910,14 @@ setMethod("remove_worklogs_impl",
 
 remove_worklogs_impl_leaf <- function(wkls, path, parents) {
   msg <- sprintf(
-    "%s\n%s%s\n%s",
-    "Can't get the child of a leaf node with the following parents:",
-    sprintf("    %s\n", path),
-    "The following children were asked for: ",
-    sprintf("    %s\n", path)
+    paste0(
+      "\nCan't get the child of a leaf node with the following path:\n",
+      "%s\n\n",
+      "The path of the worklog that was asked for was the following:\n",
+      "%s\n"
+    ),
+    paste0("    ", parents, collapse = "\n"),
+    paste0("    ", c(parents, path), collapse = "\n")
   )
   stop(msg)
 }
@@ -933,14 +942,14 @@ setGeneric("remove_worklogs",
 #' @export
 setMethod("remove_worklogs",
   signature  = "worklogs_node",
-  definition = function(wkls, path) remove_worklogs_impl(wkls, path, "")
+  definition = function(wkls, path) remove_worklogs_impl(wkls, path, character(0L))
 )
 
 #' @rdname remove_worklogs
 #' @export
 setMethod("remove_worklogs",
   signature  = "worklogs_leaf",
-  definition = function(wkls, path) remove_worklogs_impl(wkls, path, "")
+  definition = function(wkls, path) remove_worklogs_impl(wkls, path, character(0L))
 )
 
 
