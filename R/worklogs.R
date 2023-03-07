@@ -874,7 +874,11 @@ remove_worklogs_impl_node <- function(wkls, path, parents) {
         "%s\n"
       ),
       child_name,
-      paste0("    ", parents, collapse = "\n"),
+      `if`(
+        length(parents) >= 1L,
+        paste0("    ", parents, collapse = "\n"),
+        "    <top level>"
+      ),
       paste0("    ", c(parents, path), collapse = "\n")
     )
     stop(msg)
@@ -910,7 +914,6 @@ setMethod("remove_worklogs_impl",
 
 remove_worklogs_impl_leaf <- function(wkls, path, parents) {
   msg <- sprintf(
-    # TODO: if path is empty (i.e. )
     paste0(
       "\nCan't get the child of a leaf node with the following path:\n",
       "%s\n\n",
@@ -974,7 +977,8 @@ remove_worklogs_leaf <- function(wkls, path) {
     )
   }
   else {
-    wkls <- remove_worklogs_impl_node(wkls, path, character(0L))
+    wkls_node <- create_node_from_leaf(wkls)
+    wkls <- remove_worklogs_impl_node(wkls_node, path, character(0L))
   }
   wkls
 }
@@ -985,10 +989,16 @@ setMethod("remove_worklogs",
   signature  = "worklogs_leaf",
   definition = remove_worklogs_leaf
 )
-# TODO: special cases
-# length-0 path case
-# delete all worklogs (that should work already, right?)
-# top level worklogs_leaf input
+
+create_node_from_leaf <- function(wkls) {
+  stopifnot(is(wkls, "worklogs_leaf"))
+  new(
+    Class       = "worklogs_node",
+    children    = set_names(list(wkls), wkls@name),
+    fold_status = "unfolded",
+    prototype   = wkls@worklogs[numeric(0L), ]
+  )
+}
 
 
 # Collect worklogs (e.g. reassemble into a data frame) -------------------------
