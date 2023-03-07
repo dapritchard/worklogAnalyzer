@@ -910,6 +910,7 @@ setMethod("remove_worklogs_impl",
 
 remove_worklogs_impl_leaf <- function(wkls, path, parents) {
   msg <- sprintf(
+    # TODO: if path is empty (i.e. )
     paste0(
       "\nCan't get the child of a leaf node with the following path:\n",
       "%s\n\n",
@@ -938,20 +939,56 @@ setGeneric("remove_worklogs",
   signature = "wkls"
 )
 
+remove_worklogs_node <- function(wkls, path) {
+  stopifnot(
+    is(wkls, "worklogs_node"),
+    is_chr_nomiss(path)
+  )
+  if (length(path) == 0L) {
+    wkls@children <- structure(list(), names = character(0L))
+  }
+  else {
+    wkls <- remove_worklogs_impl(wkls, path, character(0L))
+  }
+  wkls
+}
+
 #' @rdname remove_worklogs
 #' @export
 setMethod("remove_worklogs",
   signature  = "worklogs_node",
-  definition = function(wkls, path) remove_worklogs_impl(wkls, path, character(0L))
+  definition = remove_worklogs_node
 )
+
+remove_worklogs_leaf <- function(wkls, path) {
+  stopifnot(
+    is(wkls, "worklogs_leaf"),
+    is_chr_nomiss(path)
+  )
+  if (length(path) == 0L) {
+    wkls <- new(
+      Class       = "worklogs_node",
+      children    = structure(list(), names = character(0L)),
+      fold_status = "unfolded",
+      prototype   = wkls@worklogs[numeric(0L), ]
+    )
+  }
+  else {
+    wkls <- remove_worklogs_impl_node(wkls, path, character(0L))
+  }
+  wkls
+}
 
 #' @rdname remove_worklogs
 #' @export
 setMethod("remove_worklogs",
   signature  = "worklogs_leaf",
-  definition = function(wkls, path) remove_worklogs_impl(wkls, path, character(0L))
+  definition = remove_worklogs_leaf
 )
-
+# TODO: special cases
+# length-0 path case
+# delete all worklogs (that should work already, right?)
+# top level worklogs_leaf input
 
 
 # Collect worklogs (e.g. reassemble into a data frame) -------------------------
