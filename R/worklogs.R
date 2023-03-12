@@ -1093,9 +1093,21 @@ setMethod("extract_effort",
 )
 
 extract_effort_leaf <- function(wkls) {
+  normalize_duration <- function(duration) {
+    units_type <- units(duration)
+    if (units_type == "secs") {
+      multiplier <- 1
+    } else if (units_type == "mins") {
+      multiplier <- 60
+    }
+    else {
+      stop("internal error: no formating for '", units_type, "' units")
+    }
+    sum(as.double(duration)) * multiplier
+  }
   stopifnot(is(wkls, "worklogs_leaf"))
   list(
-    sum_effort    = sum(as.numeric(wkls@worklogs$duration)),
+    sum_effort    = normalize_duration(wkls@worklogs$duration),
     n_descendents = 1L
   )
 }
@@ -1426,8 +1438,6 @@ effort_summary <- function(wkls, show_all = FALSE, effort_style = "percent") {
     effort_style = effort_style,
     show_all = show_all
   )
-  ##:ess-bp-start::browser@nil:##
-browser(expr=is.null(.ESSBP.[["@4@"]]));##:ess-bp-end:##
   effort <- effort_collection(wkls)
   stopifnot(effort@sum_effort > 0)
   tree_components <- format_effort_node(effort, "", 0L, effort@sum_effort, config)
@@ -1437,10 +1447,10 @@ browser(expr=is.null(.ESSBP.[["@4@"]]));##:ess-bp-end:##
   tasks <- pad_right(map_chr(tree_components, "task"))
   effort_summary <- sprintf("%s  %s", tasks, efforts)
   # A unicode version of c("Effort proportion", strrep("-", 17L))
-  effort_total <- mk_effort_total()
+  effort_total <- sprintf("Total: %s", mk_effort_total())
   effort_column_header_components <- c("Effort proportion", strrep("\u2500", 17L))
   effort_column_header_padding <- c(
-    strrep(" ", max(nchar(effort_summary)) - 18L - nchar(effort_total)),
+    strrep(" ", max(nchar(effort_summary)) - 17L - nchar(effort_total)),
     strrep(" ", max(nchar(effort_summary)) - 18L)
   )
   effort_column_header <- paste0(
