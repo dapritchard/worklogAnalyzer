@@ -1093,9 +1093,21 @@ setMethod("extract_effort",
 )
 
 extract_effort_leaf <- function(wkls) {
+  normalize_duration <- function(duration) {
+    units_type <- units(duration)
+    if (units_type == "secs") {
+      multiplier <- 1
+    } else if (units_type == "mins") {
+      multiplier <- 60
+    }
+    else {
+      stop("internal error: no formating for '", units_type, "' units")
+    }
+    sum(as.double(duration)) * multiplier
+  }
   stopifnot(is(wkls, "worklogs_leaf"))
   list(
-    sum_effort    = sum(as.numeric(wkls@worklogs$duration)),
+    sum_effort    = normalize_duration(wkls@worklogs$duration),
     n_descendents = 1L
   )
 }
@@ -1261,6 +1273,18 @@ pad_entries_only <- function(s) {
   paste0(padding, s)
 }
 
+mk_effort_chr <- function(sum_efforts) {
+  sum_efforts_minutes <- as.integer(sum_efforts / 60)
+  hours <- sum_efforts_minutes %/% 60L
+  minutes <- sum_efforts_minutes %% 60L
+  minutes_chr <- if_else(
+    minutes <= 9L,
+    sprintf("0%d", minutes),
+    sprintf("%d", minutes)
+  )
+  sprintf("%d:%s", hours, minutes_chr)
+}
+
 format_effort_node <- function(effort, padding, depth, total_effort, config) {
   mk_top_levels <- function(children, padding) {
     mk_folded_info <- function(effort) {
@@ -1272,15 +1296,7 @@ format_effort_node <- function(effort, padding, depth, total_effort, config) {
     }
     mk_efforts_info <- function(children) {
       sum_efforts <- map_dbl(children, `@`, "sum_effort")
-      sum_efforts_minutes <- as.integer(sum_efforts / 60)
-      hours <- sum_efforts_minutes %/% 60L
-      minutes <- sum_efforts_minutes %% 60L
-      minutes_chr <- if_else(
-        minutes <= 9L,
-        sprintf("0%d", minutes),
-        sprintf("%d", minutes)
-      )
-      effort_chr <- sprintf("%d:%s", hours, minutes_chr)
+      effort_chr <- mk_effort_chr(sum_efforts)
       # effort_chr <- pad_left(effort_orig_chr)
       proportion <- sum_efforts / total_effort
       percent_int <- as.integer(round(100 * proportion))
@@ -1400,6 +1416,24 @@ setMethod("format_effort",
 #'
 #' @export
 effort_summary <- function(wkls, show_all = FALSE, effort_style = "percent") {
+  mk_effort_total <- function() {
+    if (config$effort_style == "effort_and_percent") {
+      effort_total <- sprintf("%s (100%%)", mk_effort_chr(effort@sum_effort))
+    }
+    else if (config$effort_style == "effort") {
+      effort_total <- mk_effort_chr(effort@sum_effort)
+    }
+    else if (config$effort_style == "percent") {
+      effort_total <- "100%"
+    }
+    else {
+      stop(
+        "Internal error: invalid value of config$effort_style: ",
+        config$effort_style
+      )
+    }
+    effort_total
+  }
   config <- list(
     effort_style = effort_style,
     show_all = show_all
@@ -1413,10 +1447,14 @@ effort_summary <- function(wkls, show_all = FALSE, effort_style = "percent") {
   tasks <- pad_right(map_chr(tree_components, "task"))
   effort_summary <- sprintf("%s  %s", tasks, efforts)
   # A unicode version of c("Effort proportion", strrep("-", 17L))
+  effort_total <- sprintf("Total: %s", mk_effort_total())
   effort_column_header_components <- c("Effort proportion", strrep("\u2500", 17L))
-  effort_column_header_padding <- strrep(" ", max(nchar(effort_summary)) - 18L)
+  effort_column_header_padding <- c(
+    strrep(" ", max(nchar(effort_summary)) - 17L - nchar(effort_total)),
+    strrep(" ", max(nchar(effort_summary)) - 18L)
+  )
   effort_column_header <- paste0(
-    c(" ", "."),
+    c(effort_total, "."),
     effort_column_header_padding,
     effort_column_header_components
   )
