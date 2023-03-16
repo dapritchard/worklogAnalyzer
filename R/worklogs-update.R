@@ -60,3 +60,32 @@ setMethod("update_child",
   signature  = "worklogs_leaf",
   definition = update_child_leaf
 )
+
+# TODO: how does `update_worklogs` compare to `update_child`? Is there a
+# consistent naming scheme that can be used for the two?
+
+setGeneric("update_worklogs",
+  def       = function(wkls, f) standardGeneric("update_worklogs"),
+  signature = "wkls"
+)
+
+update_worklogs_node <- function(wkls, f) {
+  stopifnot(is(wkls, "worklogs_node"))
+  wkls@children <- map(wkls@children, update_worklogs, f = f)
+  wkls
+}
+
+setMethod("update_worklogs",
+  signature  = "worklogs_node",
+  definition = update_worklogs_node
+)
+
+update_worklogs_leaf <- function(wkls, f) {
+  stopifnot(is(wkls, "worklogs_leaf"))
+  f(wkls)
+}
+
+setMethod("update_worklogs",
+  signature  = "worklogs_leaf",
+  definition = update_worklogs_leaf
+)
