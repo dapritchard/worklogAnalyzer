@@ -18,3 +18,24 @@ Suggests:
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 URL: https://dapritchard.github.io/worklogAnalyzer/
+Collate:
+    'worklogs-helpers.R'
+    'add-hierarchy.R'
+    'aggregate-by-period.R'
+    'classes-config.R'
+    'classes-worklogs.R'
+    'constructors-worklogs.R'
+    'partition-efforts.R'
+    'prototype.R'
+    'read-wkls.R'
+    'subtree.R'
+    'validate.R'
+    'worklogs-effort-summary.R'
+    'worklogs-extract.R'
+    'worklogs-filter-name.R'
+    'worklogs-filter-time.R'
+    'worklogs-flatten.R'
+    'worklogs-fold.R'
+    'worklogs-remove.R'
+    'worklogs-show.R'
+    'worklogs-update.R'
