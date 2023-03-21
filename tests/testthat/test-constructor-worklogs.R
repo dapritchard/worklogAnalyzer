@@ -196,11 +196,6 @@ wkls_with_zerochildren <- new(
 
 # Begin tests ------------------------------------------------------------------
 
-# Worklog data frames with 0 rows
-# Worklog data frames with differing types
-# Worklogs where the name of a leaf child doesn't match the name of a task
-# Worklog data frames with more than 1 task description
-
 test_that("`worklogs` data frame input", {
 
   # A data frame of worklog entries with 0 rows are an error because we can't
@@ -254,6 +249,8 @@ test_that("`worklogs` throws an error for trees without any leafs", {
   expect_error(worklogs(empty_list, FALSE, config))
   expect_error(worklogs(list(a = empty_list, b = empty_list), FALSE, config))
 })
+
+# TODO: need to test `split_dfs = TRUE`
 
 # # TODO: make into test cases
 # test_that("remove_worklogs", {

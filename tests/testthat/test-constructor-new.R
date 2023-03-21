@@ -1,3 +1,10 @@
+install_r <- tibble(
+  description = "Install latest version of R",
+  start       = parse_ymdhm(c("2023-02-14 20:12", "2023-02-15 18:17")),
+  end         = parse_ymdhm(c("2023-02-14 20:30", "2023-02-15 18:33")),
+  duration    = end - start
+)
+
 install_r_withintercept <- tibble(
   description = "Install latest version of R",
   start       = parse_ymdhm(c("2023-02-14 20:12", "2023-02-15 18:17")),
@@ -13,9 +20,18 @@ dev_r_packages <- tibble(
   duration    = end - start
 )
 
-wkls_install_r_withintercept <- new(
+prototype <- dev_r_packages[integer(0L), ]
+
+wkls_install_r <- new(
   Class    = "worklogs_leaf",
   worklogs = install_r,
+  name     = "Install latest version of R",
+  config   = config
+)
+
+wkls_install_r_withintercept <- new(
+  Class    = "worklogs_leaf",
+  worklogs = install_r_withintercept,
   name     = "Install latest version of R",
   config   = config
 )
@@ -93,8 +109,7 @@ test_that("`new` for `worklogs_node` throws an error for invalid input", {
   #   )
   # )
 
-  # # FIXME
-  # # Prototypes must be consistent
+  # # Prototypes must be consistent for two leafs
   # expect_error(
   #   new(
   #     Class = "worklogs_node",
@@ -107,8 +122,34 @@ test_that("`new` for `worklogs_node` throws an error for invalid input", {
   #   )
   # )
 
-  # TODO: prototype is consistent with one node and one leaf or with two nodes
-  # TODO: prototype is consistent where the prototypes where defined at different levels
+  # Prototypes must be consistent for a leaf and a node
+  expect_error(
+    new(
+      Class = "worklogs_node",
+      children = list(
+        "Install latest version of R"   = wkls_install_r,
+        "Install devtools and testthat" = wkls_dev_r_packages,
+        "Empty node" = new(
+          Class = "worklogs_node",
+          children = structure(list(), names = character(0L)),
+          fold_status = "unfolded",
+          prototype = tibble()
+        )
+      ),
+      fold_status = "unfolded",
+      prototype = prototype
+    )
+  )
+
+  # # Prototypes must be consistent with a parent and child
+  # expect_error(
+  #   new(
+  #     Class = "worklogs_node",
+  #     children = list("Install latest version of R" = wkls_install_r_withintercept),
+  #     fold_status = "unfolded",
+  #     prototype = prototype
+  #   )
+  # )
 })
 
 test_that("`new` for `worklogs_leaf` throws an error for invalid input", {
