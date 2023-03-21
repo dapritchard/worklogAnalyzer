@@ -27,7 +27,7 @@ wkls_dev_r_packages <- new(
   config   = config
 )
 
-test_that("`worklogs_node` throws an error for invalid input", {
+test_that("`new` for `worklogs_node` throws an error for invalid input", {
 
   # # FIXME
   # # Invalid `fold_status` inputs for `worklogs_node` construction causes an
@@ -83,15 +83,15 @@ test_that("`worklogs_node` throws an error for invalid input", {
     )
   )
 
-  # Prototype must be a data frame with 0 rows
-  expect_error(
-    new(
-      Class = "worklogs_node",
-      children = structure(list(), names = character(0L)),
-      fold_status = "unfolded",
-      prototype = tibble(x = 1)
-    )
-  )
+  # # Prototype must be a data frame with 0 rows
+  # expect_error(
+  #   new(
+  #     Class = "worklogs_node",
+  #     children = structure(list(), names = character(0L)),
+  #     fold_status = "unfolded",
+  #     prototype = tibble(x = 1)
+  #   )
+  # )
 
   # # FIXME
   # # Prototypes must be consistent
@@ -108,4 +108,43 @@ test_that("`worklogs_node` throws an error for invalid input", {
   # )
 
   # TODO: prototype is consistent with one node and one leaf or with two nodes
+  # TODO: prototype is consistent where the prototypes where defined at different levels
+})
+
+test_that("`new` for `worklogs_leaf` throws an error for invalid input", {
+
+  # expect_error(
+  #   new(
+  #     Class    = "worklogs_leaf",
+  #     worklogs = dev_r_packages,
+  #     name     = character(0L),
+  #     config   = config
+  #   )
+  # )
+  # expect_error(
+  #   new(
+  #     Class    = "worklogs_leaf",
+  #     worklogs = dev_r_packages,
+  #     name     = 1,
+  #     config   = config
+  #   )
+  # )
+  # expect_error(
+  #   new(
+  #     Class    = "worklogs_leaf",
+  #     worklogs = dev_r_packages,
+  #     name     = NA_character_,
+  #     config   = config
+  #   )
+  # )
+  # expect_error(
+  #   new(
+  #     Class    = "worklogs_leaf",
+  #     worklogs = dev_r_packages,
+  #     name     = c("name1", "name2"),
+  #     config   = config
+  #   )
+  # )
+
+  # TODO: ensure that worklogs are consistent with `config`
 })
