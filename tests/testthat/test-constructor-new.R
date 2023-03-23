@@ -32,6 +32,20 @@ install_r_withtags <- tibble(
   tags        = list(character(0L))
 )
 
+install_r_withextra <- tibble(
+  description = "Install latest version of R",
+  start       = parse_ymdhm(c("2023-02-14 20:12", "2023-02-15 18:17")),
+  end         = parse_ymdhm(c("2023-02-14 20:30", "2023-02-15 18:33")),
+  duration    = end - start,
+  tags        = list(character(0L)),
+  extra       = 1,
+  baddescription = c("Install latest version of R", "not the same"),
+  badstart    = parse_ymdhm(c("2023-02-14 20:12", NA_character_)),
+  badend      = parse_ymdhm(c("2023-02-14 20:30", NA_character_)),
+  badduration = duration - 1000000,
+  badtags     = list("some tag", NA_character_)
+)
+
 dev_r_packages <- tibble(
   description = "Install devtools and testthat",
   start       = parse_ymdhm("2023-02-15 17:55"),
@@ -205,7 +219,7 @@ test_that("`new` for `worklogs_leaf` throws an error for invalid input", {
   #   )
   # )
 
-  # TODO: ensure that worklogs are consistent with `config`
+  # Ensure that columns specified in `config` exist in the worklogs data frame
   expect_error(
     new(
       Class = "worklogs_leaf",
@@ -266,6 +280,71 @@ test_that("`new` for `worklogs_leaf` throws an error for invalid input", {
       )
     )
   )
+
+  # Ensure that columns specified in `config` have the right type
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withextra,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        description_label = "extra"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withextra,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        start_label = "extra"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withextra,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        end_label = "extra"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withextra,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        duration_label = "extra"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withextra,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        tags_label = "extra"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withextra,
+      name = "Install latest version of R",
+      config = worklogs_config_withdefaults(
+        tags_label = "extra"
+      )
+    )
+  )
+
+  # Ensure that at least two out of three of the start, end, and duration
+  # columns are specified
   expect_error(
     new(
       Class = "worklogs_leaf",
@@ -299,4 +378,7 @@ test_that("`new` for `worklogs_leaf` throws an error for invalid input", {
       )
     )
   )
+
+  # TODO: ensure that when start, end, and duration are all there that they are consistent
+  # TODO: when and where do we check that worklogs don't overlap?
 })
