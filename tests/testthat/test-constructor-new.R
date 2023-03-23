@@ -53,6 +53,48 @@ dev_r_packages <- tibble(
   duration    = end - start
 )
 
+diff_discriptions <- tibble(
+  description = c("Some description", "Another description"),
+  start       = parse_ymdhm(c("2023-02-14 20:12", "2023-02-15 18:17")),
+  end         = parse_ymdhm(c("2023-02-14 20:30", "2023-02-15 18:33")),
+  duration    = end - start,
+  tags        = list(character(0L))
+)
+
+end_before_start_noduration <- tibble(
+  description = "End before start",
+  start       = parse_ymdhm("2023-02-15 17:55"),
+  end         = parse_ymdhm("1923-02-15 18:02")
+)
+
+end_before_start_withduration <- tibble(
+  description = "End before start",
+  start       = parse_ymdhm("2023-02-15 17:55"),
+  end         = parse_ymdhm("1923-02-15 18:02"),
+  duration    = end - start,
+)
+
+not_all_consistent <- tibble(
+  description = "End before start",
+  start       = parse_ymdhm("2023-02-15 17:55"),
+  end         = parse_ymdhm("1923-02-15 18:02"),
+  duration    = end - start + 1,
+)
+
+config <- worklogs_config(
+  description_label = "description",
+  start_label       = "start",
+  end_label         = "end",
+  duration          = "duration"
+)
+
+noduration_config <- worklogs_config(
+  description_label = "description",
+  start_label       = "start",
+  end_label         = "end",
+  duration          = NA_character_
+)
+
 prototype <- dev_r_packages[integer(0L), ]
 
 wkls_install_r <- new(
@@ -379,6 +421,42 @@ test_that("`new` for `worklogs_leaf` throws an error for invalid input", {
     )
   )
 
-  # TODO: ensure that when start, end, and duration are all there that they are consistent
-  # TODO: when and where do we check that worklogs don't overlap?
+  # Ensure that all description elements are equal
+  expect_error(
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = diff_discriptions,
+      name     = "Who knows?",
+      config   = config
+    )
+  )
+
+  # Ensure that all starting dates are no later than the corresponding ending
+  # dates
+  expect_error(
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = end_before_start_noduration,
+      name     = "End before start no duration",
+      config   = noduration_config
+    )
+  )
+  expect_error(
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = end_before_start_withduration,
+      name     = "End before start with duration",
+      config   = withduration_config
+    )
+  )
+
+  # Ensure that start, end, and duration are all consistent
+  expect_error(
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = not_all_consistent,
+      name     = "Not all consistent",
+      config   = config
+    )
+  )
 })
