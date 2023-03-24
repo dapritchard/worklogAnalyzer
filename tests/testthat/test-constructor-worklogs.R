@@ -202,6 +202,10 @@ test_that("`worklogs` data frame input", {
   # infer the name
   expect_error(worklogs(empty_install_r, FALSE, config))
 
+  # TODO:
+  # A data frame of worklog entries with one row is converted to a
+  # `worklogs_node` with a single child
+
   # A data frame of worklog entries with multiple rows are converted to a
   # `worklogs_node` with a single child
   actual <- worklogs(install_r, FALSE, config)
