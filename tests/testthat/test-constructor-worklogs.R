@@ -193,6 +193,51 @@ wkls_with_zerochildren <- new(
 )
 
 
+# Source data in a combined data frame -----------------------------------------
+
+source_combineddf <- list(
+  "Setup development environment" = bind_rows(install_r, dev_r_packages),
+  "Initialize package" = create_package
+)
+
+wklscombineddf_setup_dev <- new(
+  Class       = "worklogs_node",
+  children    = list(
+    "Install devtools and testthat" = wkls_dev_r_packages,
+    "Install latest version of R"   = wkls_install_r
+  ),
+  fold_status = "unfolded",
+  prototype   = prototype
+)
+
+wklscombineddf_initialize <- new(
+  Class = "worklogs_node",
+  children = list(
+    "Run 'create_package' and 'use_testthat'" = wkls_create_package
+  ),
+  fold_status = "unfolded",
+  prototype = prototype
+)
+
+wkls_combineddf <- new(
+  Class       = "worklogs_node",
+  children    = list(
+    "Setup development environment" = wklscombineddf_setup_dev,
+    "Initialize package"            = wklscombineddf_initialize
+  ),
+  fold_status = "unfolded",
+  prototype   = prototype
+)
+
+source_combineddf_with_zerochildren <- list(
+  "Zero children" = structure(list(), names = character(0L)),
+  # "Setup development environment" = list(
+  #   "Install latest version of R"   = install_r,
+  #   "Install devtools and testthat" = dev_r_packages
+  # ),
+  "Run 'create_package' and 'use_testthat'" = create_package
+)
+
 
 # Begin tests ------------------------------------------------------------------
 
@@ -202,11 +247,21 @@ test_that("`worklogs` data frame input", {
   # infer the name
   expect_error(worklogs(empty_install_r, FALSE, config))
 
-  # TODO:
   # A data frame of worklog entries with one row is converted to a
-  # `worklogs_node` with a single child
+  #  `worklogs_node` with a single child
+  actual <- worklogs(install_r[1L, ], FALSE, config)
+  expected <- new(
+    Class = "worklogs_node",
+    children = structure(
+      .Data = list(wkls_install_r[1L, ]),
+      names = wkls_install_r@worklogs$description[1L]
+    ),
+    fold_status = "unfolded",
+    prototype = prototype
+  )
+  expect_identical(actual, expected)
 
-  # A data frame of worklog entries with multiple rows are converted to a
+  # A data frame of worklog entries with >= 2 rows is converted to a
   # `worklogs_node` with a single child
   actual <- worklogs(install_r, FALSE, config)
   expected <- new(
@@ -221,7 +276,7 @@ test_that("`worklogs` data frame input", {
   expect_identical(actual, expected)
 })
 
-test_that("`worklogs` with `split_dfs` as `FALSE`", {
+test_that("`worklogs` when `split_dfs` is `FALSE`", {
 
   # Basic application of `worklogs`
   actual <- worklogs(source_worklog, FALSE, config)
@@ -238,21 +293,42 @@ test_that("`worklogs` with `split_dfs` as `FALSE`", {
   expect_error(worklogs(list(), FALSE, config))
   expect_error(worklogs(list(install_r), FALSE, config))
 
-  # A worklogs leaf with 0 entries is allowed
+  # A worklogs leaf inside the worklogs tree with 0 entries is allowed
   actual <- worklogs(source_with_emptyleaf, FALSE, config)
   expect_identical(actual, wkls_with_emptyleaf)
 
-  # # FIXME
   # # A worklogs node with 0 children is allowed
   # actual <- worklogs(source_with_zerochildren, FALSE, config)
   # expect_identical(actual, wkls_with_zerochildren)
 })
 
+test_that("`worklogs` when `split_dfs` is `TRUE`", {
+
+  # Basic application of `worklogs`. Note that:
+  #    1. the order of the `Setup development environment` children is lexically
+  #    ordered
+  #    2. it's not possible to create a node entry with children that are a mix
+  #    of both `worklogs_node`s and `worklogs_leaf`s when `split_dfs` is `TRUE`
+  actual <- worklogs(source_combineddf, TRUE, config)
+  expect_identical(actual, wkls_combineddf)
+
+  # Lists are required to be named
+  expect_error(worklogs(list(), TRUE, config))
+  expect_error(worklogs(list(install_r), TRUE, config))
+
+  # A worklogs leaf inside the worklogs tree with 0 entries is allowed
+  actual <- worklogs(source_with_emptyleaf, TRUE, config)
+  # FIXME: add test
+
+  # # # A worklogs node with 0 children is allowed
+  # # actual <- worklogs(source_with_zerochildren, TRUE, config)
+  # # expect_identical(actual, wkls_with_zerochildren)
+})
+
 # We need at least one leaf in order to determine the worklog prototype
 test_that("`worklogs` throws an error for trees without any leafs", {
   expect_error(worklogs(empty_list, FALSE, config))
+  expect_error(worklogs(empty_list, TRUE, config))
   expect_error(worklogs(list(a = empty_list, b = empty_list), FALSE, config))
+  expect_error(worklogs(list(a = empty_list, b = empty_list), TRUE, config))
 })
-
-# TODO: need to test `split_dfs = TRUE`
-
