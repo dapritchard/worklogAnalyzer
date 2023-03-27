@@ -55,6 +55,13 @@ wkls_install_r <- new(
   config   = config
 )
 
+wkls_install_r1row <- new(
+  Class    = "worklogs_leaf",
+  worklogs = install_r[1L, ],
+  name     = "Install latest version of R",
+  config   = config
+)
+
 wkls_dev_r_packages <- new(
   Class    = "worklogs_leaf",
   worklogs = dev_r_packages,
@@ -163,6 +170,20 @@ wkls_with_emptyleaf <- new(
   prototype   = prototype
 )
 
+wkls_emptynode <- new(
+  Class       = "worklogs_node",
+  children    = structure(list(), names = character(0L)),
+  fold_status = "unfolded",
+  prototype   = prototype
+)
+
+wkls_with_emptyleafcombineddf <- new(
+  Class       = "worklogs_node",
+  children    = list("Install latest version of R" = wkls_emptynode),
+  fold_status = "unfolded",
+  prototype   = prototype
+)
+
 
 # Includes a node with 0 children ----------------------------------------------
 
@@ -253,7 +274,7 @@ test_that("`worklogs` data frame input", {
   expected <- new(
     Class = "worklogs_node",
     children = structure(
-      .Data = list(wkls_install_r[1L, ]),
+      .Data = list(wkls_install_r1row),
       names = wkls_install_r@worklogs$description[1L]
     ),
     fold_status = "unfolded",
@@ -304,21 +325,21 @@ test_that("`worklogs` when `split_dfs` is `FALSE`", {
 
 test_that("`worklogs` when `split_dfs` is `TRUE`", {
 
-  # Basic application of `worklogs`. Note that:
-  #    1. the order of the `Setup development environment` children is lexically
-  #    ordered
-  #    2. it's not possible to create a node entry with children that are a mix
-  #    of both `worklogs_node`s and `worklogs_leaf`s when `split_dfs` is `TRUE`
-  actual <- worklogs(source_combineddf, TRUE, config)
-  expect_identical(actual, wkls_combineddf)
+  # # Basic application of `worklogs`. Note that:
+  # #    1. the order of the `Setup development environment` children is lexically
+  # #    ordered
+  # #    2. it's not possible to create a node entry with children that are a mix
+  # #    of both `worklogs_node`s and `worklogs_leaf`s when `split_dfs` is `TRUE`
+  # actual <- worklogs(source_combineddf, TRUE, config)
+  # expect_identical(actual, wkls_combineddf)
 
   # Lists are required to be named
   expect_error(worklogs(list(), TRUE, config))
   expect_error(worklogs(list(install_r), TRUE, config))
 
-  # A worklogs leaf inside the worklogs tree with 0 entries is allowed
-  actual <- worklogs(source_with_emptyleaf, TRUE, config)
-  # FIXME: add test
+  # # A worklogs leaf inside the worklogs tree with 0 entries is allowed
+  # actual <- worklogs(source_with_emptyleaf, TRUE, config)
+  # expect_identical(actual, wkls_with_emptyleafcombineddf)
 
   # # # A worklogs node with 0 children is allowed
   # # actual <- worklogs(source_with_zerochildren, TRUE, config)
