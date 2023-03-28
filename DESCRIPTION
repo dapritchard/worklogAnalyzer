@@ -19,11 +19,11 @@ Suggests:
 Config/testthat/edition: 3
 URL: https://dapritchard.github.io/worklogAnalyzer/
 Collate:
+    'classes-config.R'
+    'classes-worklogs.R'
     'worklogs-helpers.R'
     'add-hierarchy.R'
     'aggregate-by-period.R'
-    'classes-config.R'
-    'classes-worklogs.R'
     'constructors-worklogs.R'
     'partition-efforts.R'
     'prototype.R'

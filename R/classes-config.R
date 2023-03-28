@@ -23,11 +23,11 @@ setClass("config_labels",
     tags        = "character"
  ),
  prototype = list(
-    description = NA_character_,
-    start       = NA_character_,
-    end         = NA_character_,
-    duration    = NA_character_,
-    tags        = NA_character_
+    description = "",
+    start       = "",
+    end         = "",
+    duration    = "",
+    tags        = ""
   )
 )
 
