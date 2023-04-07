@@ -59,9 +59,29 @@ setClass("worklogs_leaf",
 setClassUnion("worklogs", c("worklogs_node", "worklogs_leaf"))
 
 validity_worklogs_node <- function(object) {
+  check_consistent_prototypes <- function(object) {
+    if (length(object@children) <= 1L) {
+      return(TRUE)
+    }
+    child_prototypes <- map(object@children, extract_prototype)
+    for (i in 2L:length(child_prototypes)) {
+      result <- all.equal(
+        target           = child_prototypes[1L],
+        current          = child_prototypes[i],
+        check.attributes = FALSE
+      )
+      if (! isTRUE(result)) {
+        return(FALSE)
+      }
+    }
+    TRUE
+  }
   children_names <- names(object@children)
   if (is.null(children_names)) {
     return("@children is required to be a named list")
+  }
+  else if (any(is.na(children_names))) {
+    return("@children names may not contain any missing values")
   }
   else if (length(unique(children_names)) != length(children_names)) {
     return("@children names must be unique")
@@ -69,8 +89,17 @@ validity_worklogs_node <- function(object) {
   else if (! all(map_lgl(object@children, is, "worklogs"))) {
     return("@children must all be worklogs")
   }
+  else if (! is_string(object@fold_status)) {
+    return("@fold_status must be a string")
+  }
   else if (! (object@fold_status %in% c("folded", "unfolded"))) {
     return("@fold_status of %s is invalid", object@fold_status)
+  }
+  else if (nrow(object@prototype) != 0L) {
+    return("@prototype must have 0 rows")
+  }
+  else if (! check_consistent_prototypes(object)) {
+    return("child prototypes must be consistent")
   }
   else {
     return(TRUE)
