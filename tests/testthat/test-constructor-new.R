@@ -222,15 +222,15 @@ test_that("`new` for `worklogs_node` throws an error for invalid input", {
     )
   )
 
-  # # Prototypes must be consistent with a parent and child
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_node",
-  #     children = list("Install latest version of R" = wkls_install_r_withtags),
-  #     fold_status = "unfolded",
-  #     prototype = prototype
-  #   )
-  # )
+  # Prototypes must be consistent with a parent and child
+  expect_error(
+    new(
+      Class = "worklogs_node",
+      children = list("Install latest version of R" = wkls_install_r_withtags),
+      fold_status = "unfolded",
+      prototype = prototype
+    )
+  )
 })
 
 test_that("`new` for `worklogs_leaf` throws an error for invalid input", {

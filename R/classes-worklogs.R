@@ -59,15 +59,28 @@ setClass("worklogs_leaf",
 setClassUnion("worklogs", c("worklogs_node", "worklogs_leaf"))
 
 validity_worklogs_node <- function(object) {
-  check_consistent_prototypes <- function(object) {
-    if (length(object@children) <= 1L) {
-      return(TRUE)
+  check_consistent_children <- function(object) {
+    if (length(object@children) >= 2L) {
+      child_prototypes <- map(object@children, extract_prototype)
+      for (i in 2L:length(child_prototypes)) {
+        result <- all.equal(
+          target           = child_prototypes[1L],
+          current          = child_prototypes[i],
+          check.attributes = FALSE
+        )
+        if (! isTRUE(result)) {
+          return(FALSE)
+        }
+      }
     }
-    child_prototypes <- map(object@children, extract_prototype)
-    for (i in 2L:length(child_prototypes)) {
+    TRUE
+  }
+  check_consistent_parentwithchildren <- function(object) {
+    if (length(object@children) >= 1L) {
+      child_prototype <- extract_prototype(object@children[[1L]])
       result <- all.equal(
-        target           = child_prototypes[1L],
-        current          = child_prototypes[i],
+        target           = object@prototype,
+        current          = child_prototype,
         check.attributes = FALSE
       )
       if (! isTRUE(result)) {
@@ -98,8 +111,11 @@ validity_worklogs_node <- function(object) {
   else if (nrow(object@prototype) != 0L) {
     return("@prototype must have 0 rows")
   }
-  else if (! check_consistent_prototypes(object)) {
+  else if (! check_consistent_children(object)) {
     return("child prototypes must be consistent")
+  }
+  else if (! check_consistent_parentwithchildren(object)) {
+    return("parent prototype must be consistent with children")
   }
   else {
     return(TRUE)
