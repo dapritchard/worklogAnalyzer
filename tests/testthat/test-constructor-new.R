@@ -127,48 +127,48 @@ wkls_dev_r_packages <- new(
 
 test_that("`new` for `worklogs_node` throws an error for invalid input", {
 
-  # # Invalid `fold_status` inputs for `worklogs_node` construction causes an
-  # # error to be thrown
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_node",
-  #     children = structure(list(), names = character(0L)),
-  #     fold_status = character(0L),
-  #     prototype = prototype
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_node",
-  #     children = structure(list(), names = character(0L)),
-  #     fold_status = NA_character_,
-  #     prototype = prototype
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_node",
-  #     children = structure(list(), names = character(0L)),
-  #     fold_status = c("folded", NA_character_),
-  #     prototype = prototype
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_node",
-  #     children = structure(list(), names = character(0L)),
-  #     fold_status = c("folded", "unfolded"),
-  #     prototype = prototype
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_node",
-  #     children = structure(list(), names = character(0L)),
-  #     fold_status = "bunkvariant",
-  #     prototype = prototype
-  #   )
-  # )
+  # Invalid `fold_status` inputs for `worklogs_node` construction causes an
+  # error to be thrown
+  expect_error(
+    new(
+      Class = "worklogs_node",
+      children = structure(list(), names = character(0L)),
+      fold_status = character(0L),
+      prototype = prototype
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_node",
+      children = structure(list(), names = character(0L)),
+      fold_status = NA_character_,
+      prototype = prototype
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_node",
+      children = structure(list(), names = character(0L)),
+      fold_status = c("folded", NA_character_),
+      prototype = prototype
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_node",
+      children = structure(list(), names = character(0L)),
+      fold_status = c("folded", "unfolded"),
+      prototype = prototype
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_node",
+      children = structure(list(), names = character(0L)),
+      fold_status = "bunkvariant",
+      prototype = prototype
+    )
+  )
 
   # Lists need to be named
   expect_error(
@@ -180,47 +180,47 @@ test_that("`new` for `worklogs_node` throws an error for invalid input", {
     )
   )
 
-  # # Prototype must be a data frame with 0 rows
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_node",
-  #     children = structure(list(), names = character(0L)),
-  #     fold_status = "unfolded",
-  #     prototype = tibble(x = 1)
-  #   )
-  # )
+  # Prototype must be a data frame with 0 rows
+  expect_error(
+    new(
+      Class = "worklogs_node",
+      children = structure(list(), names = character(0L)),
+      fold_status = "unfolded",
+      prototype = tibble(x = 1)
+    )
+  )
 
-  # # Prototypes must be consistent for two leafs
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_node",
-  #     children = list(
-  #       "Install latest version of R"   = wkls_install_r_withtags,
-  #       "Install devtools and testthat" = wkls_dev_r_packages
-  #     ),
-  #     fold_status = "unfolded",
-  #     prototype = prototype
-  #   )
-  # )
+  # Prototypes must be consistent for two leafs
+  expect_error(
+    new(
+      Class = "worklogs_node",
+      children = list(
+        "Install latest version of R"   = wkls_install_r_withtags,
+        "Install devtools and testthat" = wkls_dev_r_packages
+      ),
+      fold_status = "unfolded",
+      prototype = prototype
+    )
+  )
 
-  # # Prototypes must be consistent for a leaf and a node
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_node",
-  #     children = list(
-  #       "Install latest version of R"   = wkls_install_r,
-  #       "Install devtools and testthat" = wkls_dev_r_packages,
-  #       "Empty node" = new(
-  #         Class = "worklogs_node",
-  #         children = structure(list(), names = character(0L)),
-  #         fold_status = "unfolded",
-  #         prototype = tibble()
-  #       )
-  #     ),
-  #     fold_status = "unfolded",
-  #     prototype = prototype
-  #   )
-  # )
+  # Prototypes must be consistent for a leaf and a node
+  expect_error(
+    new(
+      Class = "worklogs_node",
+      children = list(
+        "Install latest version of R"   = wkls_install_r,
+        "Install devtools and testthat" = wkls_dev_r_packages,
+        "Empty node" = new(
+          Class = "worklogs_node",
+          children = structure(list(), names = character(0L)),
+          fold_status = "unfolded",
+          prototype = tibble()
+        )
+      ),
+      fold_status = "unfolded",
+      prototype = prototype
+    )
+  )
 
   # # Prototypes must be consistent with a parent and child
   # expect_error(
