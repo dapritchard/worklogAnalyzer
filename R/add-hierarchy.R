@@ -131,5 +131,10 @@ worklogs_from_parents_impl <- function(worklogs_df, parents, config) {
     split_children(worklogs_df[has_parents, ]),
     worklogs_leafs@children
   )
-  new("worklogs_node", children = children, fold_status = "unfolded")
+  new(
+    Class       = "worklogs_node",
+    children    = children,
+    fold_status = "unfolded",
+    prototype   = worklogs_df[integer(0L), ]
+  )
 }
