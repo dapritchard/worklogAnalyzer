@@ -117,12 +117,25 @@ validity_worklogs_node <- function(object) {
   else if (! check_consistent_parentwithchildren(object)) {
     return("parent prototype must be consistent with children")
   }
-  else {
-    return(TRUE)
-  }
+  TRUE
 }
 
 setValidity("worklogs_node", validity_worklogs_node)
+
+validity_worklogs_leaf <- function(object) {
+  check_config <- function(object) {
+    TRUE
+  }
+  if (! is_string(object@name)) {
+    return("@name is required to be a string")
+  }
+  else if (! is_string(object@name)) {
+    return("@name is required to be a string")
+  }
+  TRUE
+}
+
+setValidity("worklogs_leaf", validity_worklogs_leaf)
 
 #' Create a `worklogs` Object
 #'

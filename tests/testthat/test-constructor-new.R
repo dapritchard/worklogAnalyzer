@@ -235,38 +235,30 @@ test_that("`new` for `worklogs_node` throws an error for invalid input", {
 
 test_that("`new` for `worklogs_leaf` throws an error for invalid input", {
 
-  # expect_error(
-  #   new(
-  #     Class    = "worklogs_leaf",
-  #     worklogs = dev_r_packages,
-  #     name     = character(0L),
-  #     config   = config
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class    = "worklogs_leaf",
-  #     worklogs = dev_r_packages,
-  #     name     = 1,
-  #     config   = config
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class    = "worklogs_leaf",
-  #     worklogs = dev_r_packages,
-  #     name     = NA_character_,
-  #     config   = config
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class    = "worklogs_leaf",
-  #     worklogs = dev_r_packages,
-  #     name     = c("name1", "name2"),
-  #     config   = config
-  #   )
-  # )
+  expect_error(
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = dev_r_packages,
+      name     = character(0L),
+      config   = config
+    )
+  )
+  expect_error(
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = dev_r_packages,
+      name     = NA_character_,
+      config   = config
+    )
+  )
+  expect_error(
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = dev_r_packages,
+      name     = c("name1", "name2"),
+      config   = config
+    )
+  )
 
   # # Ensure that columns specified in `config` exist in the worklogs data frame
   # expect_error(
