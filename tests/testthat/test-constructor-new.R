@@ -384,41 +384,6 @@ test_that("`new` for `worklogs_leaf` throws an error for invalid input", {
   #   )
   # )
 
-  # # Ensure that at least two out of three of the start, end, and duration
-  # # columns are specified
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withtags,
-  #     name = "Install latest version of R",
-  #     config = worklogs_config_withdefaults(
-  #       start_label = NA_character_,
-  #       end_label   = NA_character_
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withtags,
-  #     name = "Install latest version of R",
-  #     config = worklogs_config_withdefaults(
-  #       start_label    = NA_character_,
-  #       duration_label = NA_character_
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withtags,
-  #     name = "Install latest version of R",
-  #     config = worklogs_config_withdefaults(
-  #       end_label      = NA_character_,
-  #       duration_label = NA_character_
-  #     )
-  #   )
-  # )
 
   # # Ensure that all description elements are equal
   # expect_error(

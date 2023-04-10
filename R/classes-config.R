@@ -102,3 +102,40 @@ worklogs_config <- function(description_label,
     # timezone = timezone
   )
 }
+
+# # TODO: rewrite these as tests of `new` for `config`
+# # Ensure that at least two out of three of the start, end, and duration
+# # columns are specified
+# expect_error(
+#   new(
+#     Class = "worklogs_leaf",
+#     worklogs = install_r_withtags,
+#     name = "Install latest version of R",
+#     config = worklogs_config_withdefaults(
+#       start_label = NA_character_,
+#       end_label   = NA_character_
+#     )
+#   )
+# )
+# expect_error(
+#   new(
+#     Class = "worklogs_leaf",
+#     worklogs = install_r_withtags,
+#     name = "Install latest version of R",
+#     config = worklogs_config_withdefaults(
+#       start_label    = NA_character_,
+#       duration_label = NA_character_
+#     )
+#   )
+# )
+# expect_error(
+#   new(
+#     Class = "worklogs_leaf",
+#     worklogs = install_r_withtags,
+#     name = "Install latest version of R",
+#     config = worklogs_config_withdefaults(
+#       end_label      = NA_character_,
+#       duration_label = NA_character_
+#     )
+#   )
+# )
