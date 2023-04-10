@@ -180,15 +180,25 @@ validity_worklogs_leaf <- function(object) {
       return("cannot have any start times that come after end times")
     }
   }
-  # tags_label <- object@config@labels@tags
-  # if (! is.null(tags_label)) {
-  #   if (! (tags_label %in% names(object@worklogs))) {
-  #     return("@config@labels@tags is not in the worklogs data frame")
-  #   }
-  #   if (! is_chr_nomiss(object@worklogs[[tags_label]])) {
-  #     return("the tags field must be a character vector without NAs")
-  #   }
-  # }
+  if (
+    (! is.null(start_label))
+    && (! is.null(end_label))
+    && (! is.null(duration_label))
+  ) {
+    diff <- object@worklogs[[end_label]] - object@worklogs[[start_label]]
+    if (! all(diff == object@worklogs[[duration_label]])) {
+      return("the start, end, and duration columns must be consistent")
+    }
+  }
+  tags_label <- object@config@labels@tags
+  if (! is.null(tags_label)) {
+    if (! (tags_label %in% names(object@worklogs))) {
+      return("@config@labels@tags is not in the worklogs data frame")
+    }
+    if (! is_chr_nomiss(object@worklogs[[tags_label]])) {
+      return("the tags field must be a character vector without NAs")
+    }
+  }
   TRUE
 }
 
