@@ -1,3 +1,6 @@
+setClassUnion("optional_chr", c("NULL", "character"))
+
+
 #' Configuration Classes
 #'
 #' S4 classes used in specifying worklogs configuration information.
@@ -16,11 +19,11 @@ NULL
 #' @export
 setClass("config_labels",
   slots = c(
-    description = "character",
-    start       = "character",
-    end         = "character",
-    duration    = "character",
-    tags        = "character"
+    description = "optional_chr",
+    start       = "optional_chr",
+    end         = "optional_chr",
+    duration    = "optional_chr",
+    tags        = "optional_chr"
  ),
  prototype = list(
     description = "",
@@ -35,9 +38,9 @@ setClass("config_labels",
 # #' @export
 # setClass("config_formats",
 #   slots = c(
-#     start    = "character",
-#     end      = "character",
-#     duration = "character"
+#     start    = "optional_chr",
+#     end      = "optional_chr",
+#     duration = "optional_chr"
 #  ),
 #  prototype = list(
 #     start    = NA_character_,
