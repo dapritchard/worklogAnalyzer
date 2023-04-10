@@ -99,7 +99,7 @@ noduration_config <- worklogs_config(
   description_label = "description",
   start_label       = "start",
   end_label         = "end",
-  duration          = NA_character_
+  duration          = NULL
 )
 
 prototype <- dev_r_packages[integer(0L), ]
