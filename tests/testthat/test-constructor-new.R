@@ -260,140 +260,139 @@ test_that("`new` for `worklogs_leaf` throws an error for invalid input", {
     )
   )
 
-  # # Ensure that columns specified in `config` exist in the worklogs data frame
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = dev_r_packages,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       description_label = "bunkdescription"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = dev_r_packages,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       start_label = "bunkstart"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = dev_r_packages,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       end_label = "bunkend"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = dev_r_packages,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       duration_label = "bunkduration"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = dev_r_packages,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       tags_label = "notagscolumn"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withtags,
-  #     name = "Install latest version of R",
-  #     config = worklogs_config_withdefaults(
-  #       tags_label = "bunktags"
-  #     )
-  #   )
-  # )
+  # Ensure that columns specified in `config` exist in the worklogs data frame
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = dev_r_packages,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        description_label = "bunkdescription"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = dev_r_packages,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        start_label = "bunkstart"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = dev_r_packages,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        end_label = "bunkend"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = dev_r_packages,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        duration_label = "bunkduration"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = dev_r_packages,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        tags_label = "notagscolumn"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withtags,
+      name = "Install latest version of R",
+      config = worklogs_config_withdefaults(
+        tags_label = "bunktags"
+      )
+    )
+  )
 
-  # # Ensure that columns specified in `config` have the right type
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withextra,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       description_label = "extra"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withextra,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       start_label = "extra"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withextra,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       end_label = "extra"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withextra,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       duration_label = "extra"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withextra,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       tags_label = "extra"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withextra,
-  #     name = "Install latest version of R",
-  #     config = worklogs_config_withdefaults(
-  #       tags_label = "extra"
-  #     )
-  #   )
-  # )
+  # Ensure that columns specified in `config` have the right type
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withextra,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        description_label = "extra"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withextra,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        start_label = "extra"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withextra,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        end_label = "extra"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withextra,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        duration_label = "extra"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withextra,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        tags_label = "extra"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withextra,
+      name = "Install latest version of R",
+      config = worklogs_config_withdefaults(
+        tags_label = "extra"
+      )
+    )
+  )
 
-
-  # # Ensure that all description elements are equal
-  # expect_error(
-  #   new(
-  #     Class    = "worklogs_leaf",
-  #     worklogs = diff_discriptions,
-  #     name     = "Who knows?",
-  #     config   = config
-  #   )
-  # )
+  # Ensure that all description elements are equal
+  expect_error(
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = diff_discriptions,
+      name     = "Who knows?",
+      config   = config
+    )
+  )
 
   # # Ensure that all starting dates are no later than the corresponding ending
   # # dates
@@ -413,6 +412,9 @@ test_that("`new` for `worklogs_leaf` throws an error for invalid input", {
   #     config   = withduration_config
   #   )
   # )
+
+  # TODO: if we're given duration paired with only 1 or start or end make sure
+  # that duration is nonnegative
 
   # # Ensure that start, end, and duration are all consistent
   # expect_error(

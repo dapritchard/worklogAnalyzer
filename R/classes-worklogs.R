@@ -129,8 +129,42 @@ validity_worklogs_leaf <- function(object) {
   if (! is_string(object@name)) {
     return("@name is required to be a string")
   }
-  else if (! is_string(object@name)) {
-    return("@name is required to be a string")
+  description_label <- object@config@labels@description
+  if (! (description_label %in% names(object@worklogs))) {
+    return("@config@labels@description is not in the worklogs data frame")
+  }
+  if (! (is_chr_nomiss(object@worklogs[[description_label]]))) {
+    return("the description field must be a character vector without any NAs")
+  }
+  if (length(unique(object@worklogs[[description_label]])) >= 2L) {
+    return("the description field cannot contain more than one value")
+  }
+  start_label <- object@config@labels@start
+  if (! is.null(start_label)) {
+    if (! (start_label %in% names(object@worklogs))) {
+      return("@config@labels@start is not in the worklogs data frame")
+    }
+    if (! (inherits(object@worklogs[[start_label]], "POSIXct"))) {
+      return("the start field must have class POSIXct")
+    }
+  }
+  end_label <- object@config@labels@end
+  if (! is.null(end_label)) {
+    if (! (end_label %in% names(object@worklogs))) {
+      return("@config@labels@end is not in the worklogs data frame")
+    }
+    if (! (inherits(object@worklogs[[end_label]], "POSIXct"))) {
+      return("the start field must have class POSIXct")
+    }
+  }
+  duration_label <- object@config@labels@duration
+  if (! is.null(duration_label)) {
+    if (! (duration_label %in% names(object@worklogs))) {
+      return("@config@labels@duration is not in the worklogs data frame")
+    }
+    if (! (inherits(object@worklogs[[duration_label]], "difftime"))) {
+      return("the duration field must have class difftime")
+    }
   }
   TRUE
 }
