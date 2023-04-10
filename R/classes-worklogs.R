@@ -147,6 +147,9 @@ validity_worklogs_leaf <- function(object) {
     if (! (inherits(object@worklogs[[start_label]], "POSIXct"))) {
       return("the start field must have class POSIXct")
     }
+    if (any(is.na(object@worklogs[[start_label]]))) {
+      return("cannot have any missing start dates")
+    }
   }
   end_label <- object@config@labels@end
   if (! is.null(end_label)) {
@@ -155,6 +158,9 @@ validity_worklogs_leaf <- function(object) {
     }
     if (! (inherits(object@worklogs[[end_label]], "POSIXct"))) {
       return("the start field must have class POSIXct")
+    }
+    if (any(is.na(object@worklogs[[end_label]]))) {
+      return("cannot have any missing end dates")
     }
   }
   duration_label <- object@config@labels@duration
@@ -165,7 +171,24 @@ validity_worklogs_leaf <- function(object) {
     if (! (inherits(object@worklogs[[duration_label]], "difftime"))) {
       return("the duration field must have class difftime")
     }
+    if (any(is.na(object@worklogs[[duration_label]]))) {
+      return("cannot have any missing duration dates")
+    }
   }
+  if ((! is.null(start_label)) && (! is.null(end_label))) {
+    if (any(object@worklogs[[start_label]] > object@worklogs[[end_label]])) {
+      return("cannot have any start times that come after end times")
+    }
+  }
+  # tags_label <- object@config@labels@tags
+  # if (! is.null(tags_label)) {
+  #   if (! (tags_label %in% names(object@worklogs))) {
+  #     return("@config@labels@tags is not in the worklogs data frame")
+  #   }
+  #   if (! is_chr_nomiss(object@worklogs[[tags_label]])) {
+  #     return("the tags field must be a character vector without NAs")
+  #   }
+  # }
   TRUE
 }
 
