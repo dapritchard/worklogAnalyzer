@@ -18,5 +18,5 @@ is_string <- function(x) {
 }
 
 is_maybe_string <- function(x) {
-  is.character(x) && (length(x) == 1L)
+  is.null(x) || is_string(x)
 }

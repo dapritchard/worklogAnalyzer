@@ -84,7 +84,7 @@ end_before_start_withduration <- tibble(
 not_all_consistent <- tibble(
   description = "End before start",
   start       = parse_ymdhm("2023-02-15 17:55"),
-  end         = parse_ymdhm("1923-02-15 18:02"),
+  end         = parse_ymdhm("2023-02-15 18:02"),
   duration    = end - start + 1,
 )
 
@@ -92,14 +92,14 @@ config <- worklogs_config(
   description_label = "description",
   start_label       = "start",
   end_label         = "end",
-  duration          = "duration"
+  duration_label    = "duration"
 )
 
 noduration_config <- worklogs_config(
   description_label = "description",
   start_label       = "start",
   end_label         = "end",
-  duration          = NA_character_
+  duration_label    = NULL
 )
 
 prototype <- dev_r_packages[integer(0L), ]
@@ -127,48 +127,48 @@ wkls_dev_r_packages <- new(
 
 test_that("`new` for `worklogs_node` throws an error for invalid input", {
 
-  # # Invalid `fold_status` inputs for `worklogs_node` construction causes an
-  # # error to be thrown
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_node",
-  #     children = structure(list(), names = character(0L)),
-  #     fold_status = character(0L),
-  #     prototype = prototype
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_node",
-  #     children = structure(list(), names = character(0L)),
-  #     fold_status = NA_character_,
-  #     prototype = prototype
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_node",
-  #     children = structure(list(), names = character(0L)),
-  #     fold_status = c("folded", NA_character_),
-  #     prototype = prototype
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_node",
-  #     children = structure(list(), names = character(0L)),
-  #     fold_status = c("folded", "unfolded"),
-  #     prototype = prototype
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_node",
-  #     children = structure(list(), names = character(0L)),
-  #     fold_status = "bunkvariant",
-  #     prototype = prototype
-  #   )
-  # )
+  # Invalid `fold_status` inputs for `worklogs_node` construction causes an
+  # error to be thrown
+  expect_error(
+    new(
+      Class = "worklogs_node",
+      children = structure(list(), names = character(0L)),
+      fold_status = character(0L),
+      prototype = prototype
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_node",
+      children = structure(list(), names = character(0L)),
+      fold_status = NA_character_,
+      prototype = prototype
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_node",
+      children = structure(list(), names = character(0L)),
+      fold_status = c("folded", NA_character_),
+      prototype = prototype
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_node",
+      children = structure(list(), names = character(0L)),
+      fold_status = c("folded", "unfolded"),
+      prototype = prototype
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_node",
+      children = structure(list(), names = character(0L)),
+      fold_status = "bunkvariant",
+      prototype = prototype
+    )
+  )
 
   # Lists need to be named
   expect_error(
@@ -180,290 +180,249 @@ test_that("`new` for `worklogs_node` throws an error for invalid input", {
     )
   )
 
-  # # Prototype must be a data frame with 0 rows
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_node",
-  #     children = structure(list(), names = character(0L)),
-  #     fold_status = "unfolded",
-  #     prototype = tibble(x = 1)
-  #   )
-  # )
+  # Prototype must be a data frame with 0 rows
+  expect_error(
+    new(
+      Class = "worklogs_node",
+      children = structure(list(), names = character(0L)),
+      fold_status = "unfolded",
+      prototype = tibble(x = 1)
+    )
+  )
 
-  # # Prototypes must be consistent for two leafs
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_node",
-  #     children = list(
-  #       "Install latest version of R"   = wkls_install_r_withtags,
-  #       "Install devtools and testthat" = wkls_dev_r_packages
-  #     ),
-  #     fold_status = "unfolded",
-  #     prototype = prototype
-  #   )
-  # )
+  # Prototypes must be consistent for two leafs
+  expect_error(
+    new(
+      Class = "worklogs_node",
+      children = list(
+        "Install latest version of R"   = wkls_install_r_withtags,
+        "Install devtools and testthat" = wkls_dev_r_packages
+      ),
+      fold_status = "unfolded",
+      prototype = prototype
+    )
+  )
 
-  # # Prototypes must be consistent for a leaf and a node
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_node",
-  #     children = list(
-  #       "Install latest version of R"   = wkls_install_r,
-  #       "Install devtools and testthat" = wkls_dev_r_packages,
-  #       "Empty node" = new(
-  #         Class = "worklogs_node",
-  #         children = structure(list(), names = character(0L)),
-  #         fold_status = "unfolded",
-  #         prototype = tibble()
-  #       )
-  #     ),
-  #     fold_status = "unfolded",
-  #     prototype = prototype
-  #   )
-  # )
+  # Prototypes must be consistent for a leaf and a node
+  expect_error(
+    new(
+      Class = "worklogs_node",
+      children = list(
+        "Install latest version of R"   = wkls_install_r,
+        "Install devtools and testthat" = wkls_dev_r_packages,
+        "Empty node" = new(
+          Class = "worklogs_node",
+          children = structure(list(), names = character(0L)),
+          fold_status = "unfolded",
+          prototype = tibble()
+        )
+      ),
+      fold_status = "unfolded",
+      prototype = prototype
+    )
+  )
 
-  # # Prototypes must be consistent with a parent and child
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_node",
-  #     children = list("Install latest version of R" = wkls_install_r_withtags),
-  #     fold_status = "unfolded",
-  #     prototype = prototype
-  #   )
-  # )
+  # Prototypes must be consistent with a parent and child
+  expect_error(
+    new(
+      Class = "worklogs_node",
+      children = list("Install latest version of R" = wkls_install_r_withtags),
+      fold_status = "unfolded",
+      prototype = prototype
+    )
+  )
 })
 
 test_that("`new` for `worklogs_leaf` throws an error for invalid input", {
 
-  # expect_error(
-  #   new(
-  #     Class    = "worklogs_leaf",
-  #     worklogs = dev_r_packages,
-  #     name     = character(0L),
-  #     config   = config
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class    = "worklogs_leaf",
-  #     worklogs = dev_r_packages,
-  #     name     = 1,
-  #     config   = config
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class    = "worklogs_leaf",
-  #     worklogs = dev_r_packages,
-  #     name     = NA_character_,
-  #     config   = config
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class    = "worklogs_leaf",
-  #     worklogs = dev_r_packages,
-  #     name     = c("name1", "name2"),
-  #     config   = config
-  #   )
-  # )
+  expect_error(
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = dev_r_packages,
+      name     = character(0L),
+      config   = config
+    )
+  )
+  expect_error(
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = dev_r_packages,
+      name     = NA_character_,
+      config   = config
+    )
+  )
+  expect_error(
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = dev_r_packages,
+      name     = c("name1", "name2"),
+      config   = config
+    )
+  )
 
-  # # Ensure that columns specified in `config` exist in the worklogs data frame
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = dev_r_packages,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       description_label = "bunkdescription"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = dev_r_packages,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       start_label = "bunkstart"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = dev_r_packages,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       end_label = "bunkend"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = dev_r_packages,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       duration_label = "bunkduration"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = dev_r_packages,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       tags_label = "notagscolumn"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withtags,
-  #     name = "Install latest version of R",
-  #     config = worklogs_config_withdefaults(
-  #       tags_label = "bunktags"
-  #     )
-  #   )
-  # )
+  # Ensure that columns specified in `config` exist in the worklogs data frame
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = dev_r_packages,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        description_label = "bunkdescription"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = dev_r_packages,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        start_label = "bunkstart"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = dev_r_packages,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        end_label = "bunkend"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = dev_r_packages,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        duration_label = "bunkduration"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = dev_r_packages,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        tags_label = "notagscolumn"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withtags,
+      name = "Install latest version of R",
+      config = worklogs_config_withdefaults(
+        tags_label = "bunktags"
+      )
+    )
+  )
 
-  # # Ensure that columns specified in `config` have the right type
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withextra,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       description_label = "extra"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withextra,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       start_label = "extra"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withextra,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       end_label = "extra"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withextra,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       duration_label = "extra"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withextra,
-  #     name = "Install devtools and testthat",
-  #     config = worklogs_config_withdefaults(
-  #       tags_label = "extra"
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withextra,
-  #     name = "Install latest version of R",
-  #     config = worklogs_config_withdefaults(
-  #       tags_label = "extra"
-  #     )
-  #   )
-  # )
+  # Ensure that columns specified in `config` have the right type
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withextra,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        description_label = "extra"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withextra,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        start_label = "extra"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withextra,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        end_label = "extra"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withextra,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        duration_label = "extra"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withextra,
+      name = "Install devtools and testthat",
+      config = worklogs_config_withdefaults(
+        tags_label = "extra"
+      )
+    )
+  )
+  expect_error(
+    new(
+      Class = "worklogs_leaf",
+      worklogs = install_r_withextra,
+      name = "Install latest version of R",
+      config = worklogs_config_withdefaults(
+        tags_label = "extra"
+      )
+    )
+  )
 
-  # # Ensure that at least two out of three of the start, end, and duration
-  # # columns are specified
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withtags,
-  #     name = "Install latest version of R",
-  #     config = worklogs_config_withdefaults(
-  #       start_label = NA_character_,
-  #       end_label   = NA_character_
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withtags,
-  #     name = "Install latest version of R",
-  #     config = worklogs_config_withdefaults(
-  #       start_label    = NA_character_,
-  #       duration_label = NA_character_
-  #     )
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class = "worklogs_leaf",
-  #     worklogs = install_r_withtags,
-  #     name = "Install latest version of R",
-  #     config = worklogs_config_withdefaults(
-  #       end_label      = NA_character_,
-  #       duration_label = NA_character_
-  #     )
-  #   )
-  # )
+  # Ensure that all description elements are equal
+  expect_error(
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = diff_discriptions,
+      name     = "Who knows?",
+      config   = config
+    )
+  )
 
-  # # Ensure that all description elements are equal
-  # expect_error(
-  #   new(
-  #     Class    = "worklogs_leaf",
-  #     worklogs = diff_discriptions,
-  #     name     = "Who knows?",
-  #     config   = config
-  #   )
-  # )
+  # Ensure that all starting dates are no later than the corresponding ending
+  # dates
+  expect_error(
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = end_before_start_noduration,
+      name     = "End before start no duration",
+      config   = noduration_config
+    )
+  )
+  expect_error(
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = end_before_start_withduration,
+      name     = "End before start with duration",
+      config   = config
+    )
+  )
 
-  # # Ensure that all starting dates are no later than the corresponding ending
-  # # dates
-  # expect_error(
-  #   new(
-  #     Class    = "worklogs_leaf",
-  #     worklogs = end_before_start_noduration,
-  #     name     = "End before start no duration",
-  #     config   = noduration_config
-  #   )
-  # )
-  # expect_error(
-  #   new(
-  #     Class    = "worklogs_leaf",
-  #     worklogs = end_before_start_withduration,
-  #     name     = "End before start with duration",
-  #     config   = withduration_config
-  #   )
-  # )
+  # TODO: if we're given duration paired with only 1 or start or end make sure
+  # that duration is nonnegative
 
-  # # Ensure that start, end, and duration are all consistent
-  # expect_error(
-  #   new(
-  #     Class    = "worklogs_leaf",
-  #     worklogs = not_all_consistent,
-  #     name     = "Not all consistent",
-  #     config   = config
-  #   )
-  # )
+  # Ensure that start, end, and duration are all consistent
+  expect_error(
+    new(
+      Class    = "worklogs_leaf",
+      worklogs = not_all_consistent,
+      name     = "Not all consistent",
+      config   = config
+    )
+  )
 })

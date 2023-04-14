@@ -1,3 +1,6 @@
+setClassUnion("optional_chr", c("NULL", "character"))
+
+
 #' Configuration Classes
 #'
 #' S4 classes used in specifying worklogs configuration information.
@@ -16,11 +19,11 @@ NULL
 #' @export
 setClass("config_labels",
   slots = c(
-    description = "character",
-    start       = "character",
-    end         = "character",
-    duration    = "character",
-    tags        = "character"
+    description = "optional_chr",
+    start       = "optional_chr",
+    end         = "optional_chr",
+    duration    = "optional_chr",
+    tags        = "optional_chr"
  ),
  prototype = list(
     description = "",
@@ -35,9 +38,9 @@ setClass("config_labels",
 # #' @export
 # setClass("config_formats",
 #   slots = c(
-#     start    = "character",
-#     end      = "character",
-#     duration = "character"
+#     start    = "optional_chr",
+#     end      = "optional_chr",
+#     duration = "optional_chr"
 #  ),
 #  prototype = list(
 #     start    = NA_character_,
@@ -73,10 +76,10 @@ setClass("worklogs_config",
 #'
 #' @export
 worklogs_config <- function(description_label,
-                            start_label = NA_character_,
-                            end_label = NA_character_,
-                            duration_label = NA_character_,
-                            tags_label = NA_character_) {
+                            start_label = NULL,
+                            end_label = NULL,
+                            duration_label = NULL,
+                            tags_label = NULL) {
   # TODO: check the following:
   # - at least 2 out of 3 of start_label, end_label, and end_format
   stopifnot(
@@ -102,3 +105,40 @@ worklogs_config <- function(description_label,
     # timezone = timezone
   )
 }
+
+# # TODO: rewrite these as tests of `new` for `config`
+# # Ensure that at least two out of three of the start, end, and duration
+# # columns are specified
+# expect_error(
+#   new(
+#     Class = "worklogs_leaf",
+#     worklogs = install_r_withtags,
+#     name = "Install latest version of R",
+#     config = worklogs_config_withdefaults(
+#       start_label = NA_character_,
+#       end_label   = NA_character_
+#     )
+#   )
+# )
+# expect_error(
+#   new(
+#     Class = "worklogs_leaf",
+#     worklogs = install_r_withtags,
+#     name = "Install latest version of R",
+#     config = worklogs_config_withdefaults(
+#       start_label    = NA_character_,
+#       duration_label = NA_character_
+#     )
+#   )
+# )
+# expect_error(
+#   new(
+#     Class = "worklogs_leaf",
+#     worklogs = install_r_withtags,
+#     name = "Install latest version of R",
+#     config = worklogs_config_withdefaults(
+#       end_label      = NA_character_,
+#       duration_label = NA_character_
+#     )
+#   )
+# )

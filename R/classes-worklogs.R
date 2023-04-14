@@ -59,9 +59,42 @@ setClass("worklogs_leaf",
 setClassUnion("worklogs", c("worklogs_node", "worklogs_leaf"))
 
 validity_worklogs_node <- function(object) {
+  check_consistent_children <- function(object) {
+    if (length(object@children) >= 2L) {
+      child_prototypes <- map(object@children, extract_prototype)
+      for (i in 2L:length(child_prototypes)) {
+        result <- all.equal(
+          target           = child_prototypes[1L],
+          current          = child_prototypes[i],
+          check.attributes = FALSE
+        )
+        if (! isTRUE(result)) {
+          return(FALSE)
+        }
+      }
+    }
+    TRUE
+  }
+  check_consistent_parentwithchildren <- function(object) {
+    if (length(object@children) >= 1L) {
+      child_prototype <- extract_prototype(object@children[[1L]])
+      result <- all.equal(
+        target           = object@prototype,
+        current          = child_prototype,
+        check.attributes = FALSE
+      )
+      if (! isTRUE(result)) {
+        return(FALSE)
+      }
+    }
+    TRUE
+  }
   children_names <- names(object@children)
   if (is.null(children_names)) {
     return("@children is required to be a named list")
+  }
+  else if (any(is.na(children_names))) {
+    return("@children names may not contain any missing values")
   }
   else if (length(unique(children_names)) != length(children_names)) {
     return("@children names must be unique")
@@ -69,15 +102,107 @@ validity_worklogs_node <- function(object) {
   else if (! all(map_lgl(object@children, is, "worklogs"))) {
     return("@children must all be worklogs")
   }
+  else if (! is_string(object@fold_status)) {
+    return("@fold_status must be a string")
+  }
   else if (! (object@fold_status %in% c("folded", "unfolded"))) {
     return("@fold_status of %s is invalid", object@fold_status)
   }
-  else {
-    return(TRUE)
+  else if (nrow(object@prototype) != 0L) {
+    return("@prototype must have 0 rows")
   }
+  else if (! check_consistent_children(object)) {
+    return("child prototypes must be consistent")
+  }
+  else if (! check_consistent_parentwithchildren(object)) {
+    return("parent prototype must be consistent with children")
+  }
+  TRUE
 }
 
 setValidity("worklogs_node", validity_worklogs_node)
+
+validity_worklogs_leaf <- function(object) {
+  check_config <- function(object) {
+    TRUE
+  }
+  if (! is_string(object@name)) {
+    return("@name is required to be a string")
+  }
+  description_label <- object@config@labels@description
+  if (! (description_label %in% names(object@worklogs))) {
+    return("@config@labels@description is not in the worklogs data frame")
+  }
+  if (! (is_chr_nomiss(object@worklogs[[description_label]]))) {
+    return("the description field must be a character vector without any NAs")
+  }
+  if (length(unique(object@worklogs[[description_label]])) >= 2L) {
+    return("the description field cannot contain more than one value")
+  }
+  start_label <- object@config@labels@start
+  if (! is.null(start_label)) {
+    if (! (start_label %in% names(object@worklogs))) {
+      return("@config@labels@start is not in the worklogs data frame")
+    }
+    if (! (inherits(object@worklogs[[start_label]], "POSIXct"))) {
+      return("the start field must have class POSIXct")
+    }
+    if (any(is.na(object@worklogs[[start_label]]))) {
+      return("cannot have any missing start dates")
+    }
+  }
+  end_label <- object@config@labels@end
+  if (! is.null(end_label)) {
+    if (! (end_label %in% names(object@worklogs))) {
+      return("@config@labels@end is not in the worklogs data frame")
+    }
+    if (! (inherits(object@worklogs[[end_label]], "POSIXct"))) {
+      return("the start field must have class POSIXct")
+    }
+    if (any(is.na(object@worklogs[[end_label]]))) {
+      return("cannot have any missing end dates")
+    }
+  }
+  duration_label <- object@config@labels@duration
+  if (! is.null(duration_label)) {
+    if (! (duration_label %in% names(object@worklogs))) {
+      return("@config@labels@duration is not in the worklogs data frame")
+    }
+    if (! (inherits(object@worklogs[[duration_label]], "difftime"))) {
+      return("the duration field must have class difftime")
+    }
+    if (any(is.na(object@worklogs[[duration_label]]))) {
+      return("cannot have any missing duration dates")
+    }
+  }
+  if ((! is.null(start_label)) && (! is.null(end_label))) {
+    if (any(object@worklogs[[start_label]] > object@worklogs[[end_label]])) {
+      return("cannot have any start times that come after end times")
+    }
+  }
+  if (
+    (! is.null(start_label))
+    && (! is.null(end_label))
+    && (! is.null(duration_label))
+  ) {
+    diff <- object@worklogs[[end_label]] - object@worklogs[[start_label]]
+    if (! all(diff == object@worklogs[[duration_label]])) {
+      return("the start, end, and duration columns must be consistent")
+    }
+  }
+  tags_label <- object@config@labels@tags
+  if (! is.null(tags_label)) {
+    if (! (tags_label %in% names(object@worklogs))) {
+      return("@config@labels@tags is not in the worklogs data frame")
+    }
+    if (! is_chr_nomiss(object@worklogs[[tags_label]])) {
+      return("the tags field must be a character vector without NAs")
+    }
+  }
+  TRUE
+}
+
+setValidity("worklogs_leaf", validity_worklogs_leaf)
 
 #' Create a `worklogs` Object
 #'
