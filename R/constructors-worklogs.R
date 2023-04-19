@@ -174,7 +174,12 @@ mk_worklogs_impl_leafs_split_yes <- function(wkls, config) {
     .x = raw_leafs,
     .f = ~ new("worklogs_leaf", worklogs = .x, name = .y, config = config)
   )
-  new("worklogs_node", children = worklogs_leafs, fold_status = "unfolded")
+  new(
+    Class       = "worklogs_node",
+    children    = worklogs_leafs,
+    fold_status = "unfolded",
+    prototype   = wkls[integer(0L), ]
+  )
 }
 
 mk_worklogs_impl_leafs_split_no <- function(wkls, name, config) {
