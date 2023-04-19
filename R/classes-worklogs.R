@@ -135,8 +135,6 @@ validity_worklogs_leaf <- function(object) {
   }
   if (! (is_chr_nomiss(object@worklogs[[description_label]]))) {
     return("the description field must be a character vector without any NAs")
-  }
-  if (length(unique(object@worklogs[[description_label]])) >= 2L) {
     return("the description field cannot contain more than one value")
   }
   start_label <- object@config@labels@start
@@ -195,7 +193,10 @@ validity_worklogs_leaf <- function(object) {
     if (! (tags_label %in% names(object@worklogs))) {
       return("@config@labels@tags is not in the worklogs data frame")
     }
-    if (! is_chr_nomiss(object@worklogs[[tags_label]])) {
+    if (! is.list(object@worklogs[[tags_label]])) {
+      return("the tags field must be a list")
+    }
+    if (! all(map_lgl(object@worklogs[[tags_label]], is_chr_nomiss))) {
       return("the tags field must be a character vector without NAs")
     }
   }
