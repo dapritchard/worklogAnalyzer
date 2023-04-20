@@ -183,8 +183,15 @@ validity_worklogs_leaf <- function(object) {
     && (! is.null(end_label))
     && (! is.null(duration_label))
   ) {
-    diff <- object@worklogs[[end_label]] - object@worklogs[[start_label]]
-    if (! all(diff == object@worklogs[[duration_label]])) {
+    diff_secs <- as.numeric(
+      x     = object@worklogs[[end_label]] - object@worklogs[[start_label]],
+      units = "secs"
+    )
+    duration_secs <- as.numeric(
+      x     = object@worklogs[[duration_label]],
+      units = "secs"
+    )
+    if (! all(abs(diff_secs - duration_secs) < 1e-8)) {  # TODO: is there a smarter way to handle this?
       return("the start, end, and duration columns must be consistent")
     }
   }
