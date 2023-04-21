@@ -135,7 +135,12 @@ validity_worklogs_leaf <- function(object) {
   }
   if (! (is_chr_nomiss(object@worklogs[[description_label]]))) {
     return("the description field must be a character vector without any NAs")
-    return("the description field cannot contain more than one value")
+  }
+  if (nrow(object@worklogs) >= 2L) {
+    desc <- object@worklogs[[description_label]]
+    if (any(desc[1L] != desc)) {
+      return("the description field cannot contain more than one value")
+    }
   }
   start_label <- object@config@labels@start
   if (! is.null(start_label)) {
